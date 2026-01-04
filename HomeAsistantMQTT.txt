@@ -1,0 +1,64 @@
+### 🏠 Home Assistant - Przykładowa konfiguracja / Example Configuration
+
+```yaml
+# configuration.yaml
+
+mqtt:
+  sensor:
+    - name: "Diesel Heater State"
+      state_topic: "diesel/state"
+      icon: mdi:fire
+      
+    - name: "Diesel Heater Voltage"
+      state_topic: "diesel/voltage"
+      unit_of_measurement: "V"
+      device_class: voltage
+      state_class: measurement
+      
+    - name: "Diesel Heater Ambient"
+      state_topic: "diesel/ambient"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      
+    - name: "Diesel Heater Case"
+      state_topic: "diesel/case"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+      
+    - name: "Diesel Heater Setpoint"
+      state_topic: "diesel/setpoint"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      
+    - name: "Diesel Heater Pump"
+      state_topic: "diesel/pump"
+      unit_of_measurement: "Hz"
+      state_class: measurement
+      
+    - name: "Diesel Heater Mode"
+      state_topic: "diesel/mode"
+      icon: mdi:cog
+
+  button:
+    - name: "Diesel Heater Power"
+      command_topic: "diesel/cmd/power"
+      payload_press: "1"
+      icon: mdi:power
+      
+    - name: "Diesel Heater UP"
+      command_topic: "diesel/cmd/up"
+      payload_press: "1"
+      icon: mdi:arrow-up
+      
+    - name: "Diesel Heater DOWN"
+      command_topic: "diesel/cmd/down"
+      payload_press: "1"
+      icon: mdi:arrow-down
+      
+    - name: "Diesel Heater MODE"
+      command_topic: "diesel/cmd/mode"
+      payload_press: "1"
+      icon: mdi:cog
+```
