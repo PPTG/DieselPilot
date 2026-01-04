@@ -238,7 +238,7 @@ Przetestowałem 2 sterowniki z czerwonym i czarnym kolorem pilota, oba działaj�
 - 🎮 **Sterowanie** - POWER, UP, DOWN, MODE
 - 💾 **Pamięć NVS** - konfiguracja przetrwa reset
 
-- Pliki:
+Pliki:
 - **DieselPilot.ino** - Kod aplikacji
 
 - **ForNerds.md** - Analiza protokołu komunikacji, narzędzia i debug
