@@ -202,14 +202,6 @@ MIT License - use as you wish, at your own risk!
 - DVB-T R820T2 dongle - cheap SDR receiver
 - Arduino IDE, Python (PyCharm) - development
 
-### 📸 Photos and Materials
-
-<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
-<img width="707" height="933" alt="image" src="https://github.com/user-attachments/assets/3e8de1fa-c899-4364-b561-8d86b8930d4d" />
-
-![IMG_20260104_011052](https://github.com/user-attachments/assets/754c2dc5-4aaf-4fa1-8733-226128dfb8b9)
-
-![IMG_20260104_011710_1](https://github.com/user-attachments/assets/a967f4d3-b575-4444-8526-6d1ad2ea6515)
 
 <a name="polish"></a>
 ## 🇵🇱 WERSJA POLSKA
@@ -410,3 +402,11 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 - Arduino IDE, Python (PyCharm) - development
 
 ### 📸 Zdjęcia i materiały
+
+<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
+
+<img width="707" height="933" alt="image" src="https://github.com/user-attachments/assets/3e8de1fa-c899-4364-b561-8d86b8930d4d" />
+
+![IMG_20260104_011052](https://github.com/user-attachments/assets/754c2dc5-4aaf-4fa1-8733-226128dfb8b9)
+
+![IMG_20260104_011710_1](https://github.com/user-attachments/assets/a967f4d3-b575-4444-8526-6d1ad2ea6515)
