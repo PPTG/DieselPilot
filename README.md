@@ -18,7 +18,7 @@ Use at your own risk!!!!
 
 Compatibility:
 I tested two controllers with red and black remote controls, both of which work correctly.
-![IMG_20260103_165719](https://github.com/user-attachments/assets/43ec8d9f-6b02-4b90-9055-03c66882fab7)
+![IMG_20260103_165719](https://github.com/user-attachments/assets/c7b77a5e-0064-4786-9fc8-64148ab031be)
 
 ### ✨ Features
 
@@ -218,7 +218,7 @@ Używasz na własne ryzyko !!!!
 Kompatybilność:
 
 Przetestowałem 2 sterowniki z czerwonym i czarnym kolorem pilota, oba działają poprawnie.
-![IMG_20260103_165719](https://github.com/user-attachments/assets/43ec8d9f-6b02-4b90-9055-03c66882fab7)
+![IMG_20260103_165719](https://github.com/user-attachments/assets/c7b77a5e-0064-4786-9fc8-64148ab031be)
 
 ### ✨ Funkcje
 
