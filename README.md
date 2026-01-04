@@ -117,7 +117,7 @@ Read: ForNerds.md
 **No communication with heater:**
 - Verify frequency (433.937 MHz)
 - Check if heater is paired
-- Make sure heater supports OLED remote (not LCD!)
+- Make sure heater supports OLED remote 
 - Check CC1101 power voltage (must be 3.3V!)
 
 **OLED not working:**
@@ -317,7 +317,7 @@ Przeczytaj: ForNerds.md
 **Brak komunikacji z ogrzewaczem:**
 - Zweryfikuj częstotliwość (433.937 MHz)
 - Sprawdź czy ogrzewacz jest sparowany
-- Upewnij się że ogrzewacz wspiera pilot OLED (nie LCD!)
+- Upewnij się że ogrzewacz wspiera pilot OLED
 - Sprawdź napięcie zasilania CC1101 (musi być 3.3V!)
 
 **OLED nie działa:**
