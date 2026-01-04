@@ -11,13 +11,10 @@
 
 **Diesel Pilot** is a fully-featured ESP32 controller for Chinese diesel heaters communicating via 433 MHz RF. The project enables full heater control through a web browser, MQTT, and integration with Home Assistant.
 
-<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
-
 ⚠️ **IMPORTANT:** 
 Use at your own risk!!!!
 
-
-
+<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
 
 Compatibility:
 I tested two controllers with red and black remote controls, both of which work correctly.
