@@ -310,7 +310,7 @@ Correct signal:
 - FSK modulation visible as "two peaks"
 - Burst every ~3 seconds (STATUS packets)
 ```
-<img width="162" height="590" alt="Zrzut ekranu 2026-01-03 003551" src="https://github.com/user-attachments/assets/854149c3-e2e2-47ab-a323-22ddcae314fa" />
+<img width="91" height="329" alt="Zrzut ekranu 2026-01-03 005132" src="https://github.com/user-attachments/assets/c2d3ec52-ae92-4357-b547-9d5e65a7bd0b" />
 
 <img width="314" height="276" alt="Zrzut ekranu 2025-12-28 010813" src="https://github.com/user-attachments/assets/ec14aafc-8ced-4ec2-92ba-68daa24c2d98" />
 
@@ -624,6 +624,7 @@ Prawidłowy sygnał:
 - Burst co ~3 sekundy (STATUS packets)
 ```
 
-<img width="162" height="590" alt="Zrzut ekranu 2026-01-03 003551" src="https://github.com/user-attachments/assets/854149c3-e2e2-47ab-a323-22ddcae314fa" />
+
+<img width="91" height="329" alt="Zrzut ekranu 2026-01-03 005132" src="https://github.com/user-attachments/assets/c2d3ec52-ae92-4357-b547-9d5e65a7bd0b" />
 
 <img width="314" height="276" alt="Zrzut ekranu 2025-12-28 010813" src="https://github.com/user-attachments/assets/ec14aafc-8ced-4ec2-92ba-68daa24c2d98" />
