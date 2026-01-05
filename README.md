@@ -99,6 +99,9 @@ CPU Frequency: 240MHz
 5. (Optional) Configure home WiFi
 6. (Optional) Configure MQTT
 
+** Pairing with the stove or setting up WIFI and MQTT takes a while after clicking the button.
+Wait for the pop-up window to appear confirming the operation.
+This is due to the need to save this data to memory :)
 
 #### Automatic Pairing
 
@@ -298,6 +301,11 @@ CPU Frequency: 240mhz
 4. Sparuj ogrzewacz (AUTO lub MANUAL)
 5. (Opcjonalnie) Skonfiguruj WiFi domowe
 6. (Opcjonalnie) Skonfiguruj MQTT
+
+** Parowanie z piecykiem czy ustawianie WIFI, MQTT trochę trwa po kliknięciu przycisku poczekaj na wyskakujący popup który potwierdzi operację.
+Jest to związane z potrzebą zapisu tych danych do pamięci :)  
+
+
 
 #### Automatyczne parowanie
 
