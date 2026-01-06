@@ -119,7 +119,8 @@ This is due to the need to save this data to memory :)
    - Sends STATUS frame with address
 4. ESP32 catches address and saves in NVS memory
 5. Done - heater paired!
-Video showing the pairing process: https://youtu.be/xmEbU_qbN60
+
+- Video showing the pairing process: https://youtu.be/xmEbU_qbN60
 
 ### Manual Paring
 Read: ForNerds.md
@@ -333,7 +334,7 @@ Jest to związane z potrzebą zapisu tych danych do pamięci :)
 4. ESP32 wyłapie adres i zapisze w pamięci NVS
 5. Gotowe - ogrzewacz sparowany!
    
-Wideo pokazujące proces parowania: https://youtu.be/xmEbU_qbN60
+- Wideo pokazujące proces parowania: https://youtu.be/xmEbU_qbN60
 
 #### Manualne Parowanie 
 
