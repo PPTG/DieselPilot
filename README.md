@@ -181,6 +181,14 @@ MIT License - use as you wish, at your own risk!
 
 ### 🔮 Planned Features
 
+**0. Reading errors ❌**
+```
+- Mapping error code to message
+- Forcing/scanning possible controller errors
+- Adding error field in GUI
+- Adding error field in MQTT
+```
+
 **1. Fuel Level Sensor ⛽**
 ```
 - Analog reading from fuel sensor
@@ -197,6 +205,13 @@ MIT License - use as you wish, at your own risk!
 - Testing reverse engineering
 - No need for actual device
 - Coming soon to repo!
+```
+
+**3. Support for controller version ☀️**
+```
+- Driver version detection
+- Pairing mode adjustment
+- Data frame mapping
 ```
 
 ### 🤝 How to Help Development?
@@ -401,6 +416,14 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 
 ### 🔮 Planowane funkcje
 
+**0. Odczytywanie błędów ❌**
+```
+- Mapowanie kodu błędu do komunikatu
+- Wymuszenie/zeskanowanie możliwych błędów sterownika 
+- Dodanie pola błędu w GUI
+- Dodanie pola błędu w MQTT
+```
+
 **1. Czujnik poziomu paliwa ⛽**
 ```
 - Odczyt analogowy z czujnika paliwa
@@ -410,13 +433,20 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 - Integracja z HA (fuel level sensor)
 ```
 
-**2. Fake Heater Simulator 🎭**
+**2. Symulator sterownika ogrzewacza 🎭**
 ```
 - Symulator ogrzewacza do testowania pilotów
 - Odpowiada jak prawdziwy heater
 - Testowanie reverse engineering
 - Bez potrzeby prawdziwego urządzenia
 - Wkrótce w repo!
+```
+
+**3. Wsparcie dla kontrolera w wersji ☀️**
+```
+- Detekcja wersji sterownika
+- Dostosowanie trybu parowania
+- Zmapowanie ramek danych
 ```
 
 ### 🤝 Jak pomóc w rozwoju?
