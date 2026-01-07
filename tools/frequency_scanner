@@ -2,7 +2,7 @@
  * ESP32 + CC1101 - FREQUENCY SCANNER
  * Scans frequencies around 433 MHz to find the best one for your remote
  * Upload -> Open SerialMonitor -> Click "UP" !!!!!
- * Press the “UP” button on the original remote control to find the frequency for your c1101 transmitter.
+ * Press the “UP” button on the original remote control to find the frequency for your c1101 transmitter. At this time, it is better to disconnect the display itself from the heater.
  * If the original remote control works on this frequency, the controller should pick it up :) 
  * If the program shows the best frequency, simply change the values by replacing the FREQ2, FREQ1, and FREQ0 registers to match the detected frequency. 
  */
