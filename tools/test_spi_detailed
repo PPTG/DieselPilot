@@ -1,0 +1,367 @@
+/*
+ * ========================================================================
+ * CC1101 SPI TEST - DETAILED
+ * ========================================================================
+ * 
+ * Tests:
+ * - If SPI works at all
+ * - If you can write and read registers
+ * - If Part Number and Version are OK
+ * - If module responds correctly
+ * 
+ * PINOUT - CHANGE IF NEEDED!
+ * 
+ * ========================================================================
+ */
+
+#include <SPI.h>
+
+// ========================================================================
+// PINOUT - CHANGE TO YOURS!
+// ========================================================================
+#define CC1101_SCK   18
+#define CC1101_MISO  19
+#define CC1101_MOSI  23
+#define CC1101_SS    5
+#define CC1101_GDO2  4
+
+// ========================================================================
+// SPI FUNCTIONS
+// ========================================================================
+
+void cc1101_writeReg(uint8_t addr, uint8_t val) {
+  digitalWrite(CC1101_SS, LOW);
+  delayMicroseconds(10);
+  while(digitalRead(CC1101_MISO));  // Wait for chip ready
+  SPI.transfer(addr);
+  SPI.transfer(val);
+  digitalWrite(CC1101_SS, HIGH);
+  delayMicroseconds(10);
+}
+
+uint8_t cc1101_readReg(uint8_t addr) {
+  digitalWrite(CC1101_SS, LOW);
+  delayMicroseconds(10);
+  while(digitalRead(CC1101_MISO));
+  SPI.transfer(addr | 0x80); // Read bit
+  uint8_t val = SPI.transfer(0xFF);
+  digitalWrite(CC1101_SS, HIGH);
+  delayMicroseconds(10);
+  return val;
+}
+
+void cc1101_strobe(uint8_t addr) {
+  digitalWrite(CC1101_SS, LOW);
+  delayMicroseconds(10);
+  while(digitalRead(CC1101_MISO));
+  SPI.transfer(addr);
+  digitalWrite(CC1101_SS, HIGH);
+  delayMicroseconds(10);
+}
+
+// ========================================================================
+// TESTS
+// ========================================================================
+
+void printBinary(uint8_t val) {
+  for(int i = 7; i >= 0; i--) {
+    Serial.print((val >> i) & 1);
+  }
+}
+
+void testPinout() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 1: PINOUT                      ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  Serial.printf("SCK  (GPIO%d): ", CC1101_SCK);
+  pinMode(CC1101_SCK, OUTPUT);
+  digitalWrite(CC1101_SCK, HIGH);
+  Serial.println(digitalRead(CC1101_SCK) ? "HIGH ✓" : "LOW ✗");
+  
+  Serial.printf("MOSI (GPIO%d): ", CC1101_MOSI);
+  pinMode(CC1101_MOSI, OUTPUT);
+  digitalWrite(CC1101_MOSI, HIGH);
+  Serial.println(digitalRead(CC1101_MOSI) ? "HIGH ✓" : "LOW ✗");
+  
+  Serial.printf("MISO (GPIO%d): ", CC1101_MISO);
+  pinMode(CC1101_MISO, INPUT);
+  Serial.println(digitalRead(CC1101_MISO) ? "HIGH (OK if module has pull-up)" : "LOW (OK if module pulls down)");
+  
+  Serial.printf("SS   (GPIO%d): ", CC1101_SS);
+  pinMode(CC1101_SS, OUTPUT);
+  digitalWrite(CC1101_SS, HIGH);
+  Serial.println(digitalRead(CC1101_SS) ? "HIGH ✓" : "LOW ✗");
+  
+  Serial.printf("GDO2 (GPIO%d): ", CC1101_GDO2);
+  pinMode(CC1101_GDO2, INPUT);
+  Serial.println(digitalRead(CC1101_GDO2) ? "HIGH" : "LOW");
+}
+
+void testSPIBasic() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 2: BASIC SPI                   ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  pinMode(CC1101_SS, OUTPUT);
+  digitalWrite(CC1101_SS, HIGH);
+  
+  SPI.begin(CC1101_SCK, CC1101_MISO, CC1101_MOSI, CC1101_SS);
+  
+  // Test different speeds
+  uint32_t speeds[] = {1000000, 2000000, 4000000, 8000000};
+  
+  for(int s = 0; s < 4; s++) {
+    SPI.setFrequency(speeds[s]);
+    Serial.printf("\n🔧 SPI Speed: %d MHz\n", speeds[s] / 1000000);
+    
+    // Reset
+    cc1101_strobe(0x30); // SRES
+    delay(100);
+    
+    // Check Part Number
+    uint8_t partnum = cc1101_readReg(0xF0); // PARTNUM
+    uint8_t version = cc1101_readReg(0xF1); // VERSION
+    
+    Serial.printf("  PARTNUM: 0x%02X ", partnum);
+    printBinary(partnum);
+    Serial.println(partnum == 0x00 ? " ✓" : " ✗");
+    
+    Serial.printf("  VERSION: 0x%02X ", version);
+    printBinary(version);
+    Serial.println((version == 0x04 || version == 0x14) ? " ✓" : " ?");
+  }
+  
+  // Set optimal speed
+  SPI.setFrequency(4000000);
+}
+
+void testWriteRead() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 3: WRITE/READ                  ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  // Reset
+  cc1101_strobe(0x30);
+  delay(100);
+  
+  // Test different registers
+  struct {
+    uint8_t addr;
+    const char* name;
+  } regs[] = {
+    {0x0A, "CHANNR"},
+    {0x0B, "FSCTRL1"},
+    {0x0C, "FSCTRL0"},
+    {0x0D, "FREQ2"},
+    {0x09, "ADDR"}
+  };
+  
+  uint8_t testValues[] = {0x00, 0x55, 0xAA, 0xFF};
+  
+  Serial.println("Register | Written  | Read      | Status");
+  Serial.println("---------|----------|-----------|-------");
+  
+  for(int r = 0; r < 5; r++) {
+    for(int v = 0; v < 4; v++) {
+      cc1101_writeReg(regs[r].addr, testValues[v]);
+      delay(10);
+      uint8_t read = cc1101_readReg(regs[r].addr);
+      
+      Serial.printf("%-8s | 0x%02X     | 0x%02X      | %s\n", 
+        regs[r].name, 
+        testValues[v], 
+        read,
+        (read == testValues[v]) ? "✓" : "✗"
+      );
+    }
+  }
+}
+
+void testStatusBytes() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 4: STATUS BYTES                ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  cc1101_strobe(0x30); // SRES
+  delay(100);
+  
+  Serial.println("Register    | Value   | Binary     | Meaning");
+  Serial.println("------------|---------|------------|---------------------------");
+  
+  uint8_t partnum = cc1101_readReg(0xF0);
+  Serial.printf("PARTNUM     | 0x%02X    | ", partnum);
+  printBinary(partnum);
+  Serial.println(partnum == 0x00 ? " | CC1101 ✓" : " | Unknown chip! ✗");
+  
+  uint8_t version = cc1101_readReg(0xF1);
+  Serial.printf("VERSION     | 0x%02X    | ", version);
+  printBinary(version);
+  Serial.println(" | Chip version");
+  
+  uint8_t marcstate = cc1101_readReg(0xF5);
+  Serial.printf("MARCSTATE   | 0x%02X    | ", marcstate);
+  printBinary(marcstate);
+  const char* states[] = {"SLEEP", "IDLE", "XOFF", "VCOON_MC", "REGON_MC", 
+                         "MANCAL", "VCOON", "REGON", "STARTCAL", "BWBOOST",
+                         "FS_LOCK", "IFADCON", "ENDCAL", "RX", "RX_END",
+                         "RX_RST", "TXRX_SWITCH", "RXFIFO_OVERFLOW", "FSTXON",
+                         "TX", "TX_END", "RXTX_SWITCH", "TXFIFO_UNDERFLOW"};
+  Serial.printf(" | %s\n", states[marcstate & 0x1F]);
+  
+  uint8_t rxbytes = cc1101_readReg(0xFB);
+  Serial.printf("RXBYTES     | 0x%02X    | ", rxbytes);
+  printBinary(rxbytes);
+  Serial.printf(" | %d bytes in FIFO\n", rxbytes & 0x7F);
+  
+  uint8_t txbytes = cc1101_readReg(0xFA);
+  Serial.printf("TXBYTES     | 0x%02X    | ", txbytes);
+  printBinary(txbytes);
+  Serial.printf(" | %d bytes in FIFO\n", txbytes & 0x7F);
+}
+
+void testReset() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 5: RESET                       ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  Serial.println("Before reset:");
+  cc1101_writeReg(0x0A, 0xAB);
+  uint8_t before = cc1101_readReg(0x0A);
+  Serial.printf("  CHANNR = 0x%02X\n", before);
+  
+  Serial.println("\nSending SRES...");
+  cc1101_strobe(0x30);
+  delay(100);
+  
+  Serial.println("\nAfter reset:");
+  uint8_t after = cc1101_readReg(0x0A);
+  Serial.printf("  CHANNR = 0x%02X ", after);
+  Serial.println(after == 0x00 ? "(reset OK ✓)" : "(reset FAIL ✗)");
+}
+
+void testContinuous() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  TEST 6: CONTINUOUS (10 attempts)   ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  int success = 0;
+  
+  for(int i = 0; i < 10; i++) {
+    cc1101_writeReg(0x0A, 0x55);
+    delay(5);
+    uint8_t val = cc1101_readReg(0x0A);
+    
+    Serial.printf("Attempt %2d: Written 0x55, Read 0x%02X %s\n", 
+      i+1, val, (val == 0x55) ? "✓" : "✗");
+    
+    if(val == 0x55) success++;
+  }
+  
+  Serial.printf("\nResult: %d/10 ", success);
+  if(success == 10) Serial.println("PERFECT! ✓");
+  else if(success > 7) Serial.println("ACCEPTABLE ⚠");
+  else Serial.println("BAD! ✗");
+}
+
+// ========================================================================
+// DIAGNOSTICS
+// ========================================================================
+
+void diagnose() {
+  Serial.println("\n╔══════════════════════════════════════╗");
+  Serial.println("║  DIAGNOSTICS                         ║");
+  Serial.println("╚══════════════════════════════════════╝\n");
+  
+  cc1101_strobe(0x30);
+  delay(100);
+  
+  uint8_t partnum = cc1101_readReg(0xF0);
+  uint8_t version = cc1101_readReg(0xF1);
+  
+  if(partnum == 0xFF && version == 0xFF) {
+    Serial.println("❌ NO COMMUNICATION!");
+    Serial.println("\nCheck:");
+    Serial.println("  1. Does module have 3.3V power?");
+    Serial.println("  2. Is GND connected?");
+    Serial.println("  3. Is pinout correct?");
+    Serial.println("  4. Are wires properly connected?");
+    Serial.println("  5. Is module damaged?");
+  }
+  else if(partnum == 0x00 && version == 0x00) {
+    Serial.println("⚠️  Module responds but shows all zeros!");
+    Serial.println("\nPossible causes:");
+    Serial.println("  1. MISO not working (check wire)");
+    Serial.println("  2. Module in strange state (try power reset)");
+    Serial.println("  3. Unstable power supply");
+  }
+  else if(partnum != 0x00) {
+    Serial.println("⚠️  Invalid Part Number!");
+    Serial.println("\nPossible causes:");
+    Serial.println("  1. This is not CC1101!");
+    Serial.println("  2. Damaged chip");
+    Serial.println("  3. SPI communication error");
+  }
+  else {
+    Serial.println("✓ SPI communication looks OK!");
+    Serial.printf("  Part Number: 0x%02X ✓\n", partnum);
+    Serial.printf("  Version: 0x%02X ", version);
+    if(version == 0x04 || version == 0x14) {
+      Serial.println("✓");
+    } else {
+      Serial.println("(unknown version, but may work)");
+    }
+  }
+}
+
+// ========================================================================
+// SETUP
+// ========================================================================
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+  
+  Serial.println("\n\n\n");
+  Serial.println("╔════════════════════════════════════════════════════╗");
+  Serial.println("║  CC1101 SPI TEST - DETAILED                        ║");
+  Serial.println("╚════════════════════════════════════════════════════╝");
+  
+  Serial.println("\n📍 Your pinout:");
+  Serial.printf("  SCK:  GPIO%d\n", CC1101_SCK);
+  Serial.printf("  MISO: GPIO%d\n", CC1101_MISO);
+  Serial.printf("  MOSI: GPIO%d\n", CC1101_MOSI);
+  Serial.printf("  SS:   GPIO%d\n", CC1101_SS);
+  Serial.printf("  GDO2: GPIO%d\n", CC1101_GDO2);
+  
+  Serial.println("\n⏳ Starting tests in 2 seconds...\n");
+  delay(2000);
+  
+  testPinout();
+  delay(1000);
+  
+  testSPIBasic();
+  delay(1000);
+  
+  testWriteRead();
+  delay(1000);
+  
+  testStatusBytes();
+  delay(1000);
+  
+  testReset();
+  delay(1000);
+  
+  testContinuous();
+  delay(1000);
+  
+  diagnose();
+  
+  Serial.println("\n\n╔════════════════════════════════════════════════════╗");
+  Serial.println("║  TESTS COMPLETED                                   ║");
+  Serial.println("╚════════════════════════════════════════════════════╝");
+  Serial.println("\nShow me the results! 📸");
+}
+
+void loop() {
+  delay(1000);
+}
