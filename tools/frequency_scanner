@@ -1,0 +1,397 @@
+/*
+ * ESP32 + CC1101 - FREQUENCY SCANNER
+ * Scans frequencies around 433 MHz to find the best one for your remote
+ * Upload -> Open SerialMonitor -> Click "UP" !!!!!
+ * Press the “UP” button on the original remote control to find the frequency for your c1101 transmitter.
+ * If the original remote control works on this frequency, the controller should pick it up :) 
+ * If the program shows the best frequency, simply change the values by replacing the FREQ2, FREQ1, and FREQ0 registers to match the detected frequency. 
+ */
+
+#include <SPI.h>
+
+#define PIN_SCK   18
+#define PIN_MISO  19
+#define PIN_MOSI  23
+#define PIN_SS    5
+#define PIN_GDO2  4
+
+#define CC1101_SRES      0x30
+#define CC1101_SRX       0x34
+#define CC1101_SIDLE     0x36
+#define CC1101_SFRX      0x3A
+#define CC1101_RSSI      0xF4
+
+// Scan range
+#define FREQ_START    432500000UL  // 432.5 MHz
+#define FREQ_END      434500000UL  // 434.5 MHz
+#define FREQ_STEP     10000UL      // 10 kHz step
+
+// Structure to store results
+struct FreqResult {
+  uint32_t freq;
+  int16_t maxRSSI;
+  int16_t avgRSSI;
+  uint16_t samples;
+};
+
+FreqResult results[201];  // Max 200 steps
+uint16_t resultCount = 0;
+
+//==============================================================================
+// CC1101 SPI Functions
+//==============================================================================
+
+void cc1101_select() {
+  digitalWrite(PIN_SS, LOW);
+  delayMicroseconds(10);
+  while(digitalRead(PIN_MISO));
+}
+
+void cc1101_deselect() {
+  digitalWrite(PIN_SS, HIGH);
+  delayMicroseconds(10);
+}
+
+uint8_t cc1101_writeReg(uint8_t addr, uint8_t value) {
+  cc1101_select();
+  SPI.transfer(addr);
+  uint8_t status = SPI.transfer(value);
+  cc1101_deselect();
+  return status;
+}
+
+uint8_t cc1101_readStatus(uint8_t addr) {
+  cc1101_select();
+  SPI.transfer(addr | 0xC0);
+  uint8_t value = SPI.transfer(0);
+  cc1101_deselect();
+  return value;
+}
+
+void cc1101_strobe(uint8_t strobe) {
+  cc1101_select();
+  SPI.transfer(strobe);
+  cc1101_deselect();
+  delayMicroseconds(10);
+}
+
+//==============================================================================
+// Frequency Setting
+//==============================================================================
+
+void setFrequency(uint32_t freqHz) {
+  // Calculate FREQ registers for CC1101
+  // FREQ = (freq_hz * 2^16) / 26000000
+  uint32_t freq = ((uint64_t)freqHz * 65536ULL) / 26000000ULL;
+  
+  uint8_t freq2 = (freq >> 16) & 0xFF;
+  uint8_t freq1 = (freq >> 8) & 0xFF;
+  uint8_t freq0 = freq & 0xFF;
+  
+  cc1101_strobe(CC1101_SIDLE);
+  delay(1);
+  
+  cc1101_writeReg(0x0D, freq2);  // FREQ2
+  cc1101_writeReg(0x0E, freq1);  // FREQ1
+  cc1101_writeReg(0x0F, freq0);  // FREQ0
+  
+  cc1101_strobe(CC1101_SFRX);
+  delay(1);
+  cc1101_strobe(CC1101_SRX);
+  delay(5);  // Allow time to stabilize
+}
+
+//==============================================================================
+// CC1101 Init
+//==============================================================================
+
+void cc1101_init() {
+  Serial.println("Initializing CC1101...");
+  
+  cc1101_strobe(CC1101_SRES);
+  delay(100);
+  
+  // Basic configuration
+  cc1101_writeReg(0x00, 0x0D);  // IOCFG2
+  cc1101_writeReg(0x03, 0x47);  // FIFOTHR
+  cc1101_writeReg(0x07, 0x00);  // PKTCTRL1
+  cc1101_writeReg(0x08, 0x32);  // PKTCTRL0
+  
+  // Modem - wide filter for scanning
+  cc1101_writeReg(0x10, 0xF8);  // MDMCFG4
+  cc1101_writeReg(0x11, 0x93);  // MDMCFG3
+  cc1101_writeReg(0x12, 0x00);  // MDMCFG2: NO SYNC
+  cc1101_writeReg(0x13, 0x22);  // MDMCFG1
+  cc1101_writeReg(0x14, 0xF8);  // MDMCFG0
+  cc1101_writeReg(0x15, 0x26);  // DEVIATN
+  
+  cc1101_writeReg(0x17, 0x30);  // MCSM1
+  cc1101_writeReg(0x18, 0x18);  // MCSM0
+  
+  // Maximum sensitivity
+  cc1101_writeReg(0x1B, 0x47);  // AGCCTRL2
+  cc1101_writeReg(0x1C, 0x40);  // AGCCTRL1
+  cc1101_writeReg(0x1D, 0x91);  // AGCCTRL0
+  
+  Serial.println("✓ CC1101 ready\n");
+}
+
+//==============================================================================
+// RSSI Reading
+//==============================================================================
+
+int16_t readRSSI() {
+  uint8_t rssiRaw = cc1101_readStatus(CC1101_RSSI);
+  
+  int16_t rssiDec;
+  if (rssiRaw >= 128) {
+    rssiDec = (int16_t)((int16_t)(rssiRaw - 256) / 2) - 74;
+  } else {
+    rssiDec = (rssiRaw / 2) - 74;
+  }
+  
+  return rssiDec;
+}
+
+//==============================================================================
+// Frequency Scanning
+//==============================================================================
+
+void scanFrequencies() {
+  Serial.println("\n╔════════════════════════════════════════════════════════════╗");
+  Serial.println("║          STARTING FREQUENCY SCAN                           ║");
+  Serial.println("╚════════════════════════════════════════════════════════════╝\n");
+  
+  Serial.println("INSTRUCTIONS:");
+  Serial.println("1. After 'PRESS REMOTE!' message - keep clicking UP button");
+  Serial.println("2. Keep clicking throughout the entire scan (~20 seconds)");
+  Serial.println("3. Program will find the frequency with the best signal\n");
+  
+  Serial.println("Scan range: 432.5 - 434.5 MHz");
+  Serial.print("Step: ");
+  Serial.print(FREQ_STEP / 1000);
+  Serial.println(" kHz");
+  Serial.println();
+  
+  // Countdown
+  for (int i = 5; i > 0; i--) {
+    Serial.print("Starting in ");
+    Serial.print(i);
+    Serial.println(" seconds...");
+    delay(1000);
+  }
+  
+  Serial.println("\n🔴 KEEP CLICKING UP BUTTON ON REMOTE NOW! 🔴\n");
+  delay(2000);
+  
+  resultCount = 0;
+  uint32_t freq = FREQ_START;
+  
+  Serial.println("Scanning...\n");
+  Serial.println("┌──────────┬──────────┬──────────┬────────────┐");
+  Serial.println("│   Freq   │ Max RSSI │ Avg RSSI │  Samples   │");
+  Serial.println("├──────────┼──────────┼──────────┼────────────┤");
+  
+  while (freq <= FREQ_END && resultCount < 200) {
+    setFrequency(freq);
+    
+    // Collect 20 samples for this frequency
+    int16_t maxRSSI = -999;
+    int32_t sumRSSI = 0;
+    uint16_t samples = 20;
+    
+    for (uint16_t i = 0; i < samples; i++) {
+      int16_t rssi = readRSSI();
+      if (rssi > maxRSSI) maxRSSI = rssi;
+      sumRSSI += rssi;
+      delay(5);
+    }
+    
+    int16_t avgRSSI = sumRSSI / samples;
+    
+    // Save result
+    results[resultCount].freq = freq;
+    results[resultCount].maxRSSI = maxRSSI;
+    results[resultCount].avgRSSI = avgRSSI;
+    results[resultCount].samples = samples;
+    resultCount++;
+    
+    // Display result
+    Serial.print("│ ");
+    Serial.print(freq / 1000000.0, 3);
+    Serial.print(" │ ");
+    
+    if (maxRSSI > -70) Serial.print(" ");
+    if (maxRSSI > -100) Serial.print(" ");
+    Serial.print(maxRSSI);
+    Serial.print(" dBm │ ");
+    
+    if (avgRSSI > -70) Serial.print(" ");
+    if (avgRSSI > -100) Serial.print(" ");
+    Serial.print(avgRSSI);
+    Serial.print(" dBm │ ");
+    
+    Serial.print("      ");
+    Serial.print(samples);
+    Serial.print(" │");
+    
+    // Mark strong signal
+    if (maxRSSI > -60) {
+      Serial.print("  🟢 STRONG!");
+    } else if (maxRSSI > -70) {
+      Serial.print("  🟡 Good");
+    }
+    
+    Serial.println();
+    
+    freq += FREQ_STEP;
+  }
+  
+  Serial.println("└──────────┴──────────┴──────────┴────────────┘\n");
+  Serial.println("✓ Scan complete!\n");
+}
+
+//==============================================================================
+// Results Analysis
+//==============================================================================
+
+void analyzeResults() {
+  Serial.println("\n╔════════════════════════════════════════════════════════════╗");
+  Serial.println("║                  RESULTS ANALYSIS                          ║");
+  Serial.println("╚════════════════════════════════════════════════════════════╝\n");
+  
+  // Find best frequency (max RSSI)
+  int bestIdx = 0;
+  int16_t bestRSSI = -999;
+  
+  for (uint16_t i = 0; i < resultCount; i++) {
+    if (results[i].maxRSSI > bestRSSI) {
+      bestRSSI = results[i].maxRSSI;
+      bestIdx = i;
+    }
+  }
+  
+  // Find top 5
+  Serial.println("🏆 TOP 5 FREQUENCIES:\n");
+  
+  for (int rank = 0; rank < 5 && rank < resultCount; rank++) {
+    int topIdx = 0;
+    int16_t topRSSI = -999;
+    
+    for (uint16_t i = 0; i < resultCount; i++) {
+      if (results[i].maxRSSI > topRSSI) {
+        bool alreadyListed = false;
+        for (int j = 0; j < rank; j++) {
+          // Check if already in top
+          if (results[i].freq == results[topIdx].freq) {
+            alreadyListed = true;
+            break;
+          }
+        }
+        if (!alreadyListed) {
+          topRSSI = results[i].maxRSSI;
+          topIdx = i;
+        }
+      }
+    }
+    
+    Serial.print(rank + 1);
+    Serial.print(". ");
+    Serial.print(results[topIdx].freq / 1000000.0, 3);
+    Serial.print(" MHz - Max: ");
+    Serial.print(results[topIdx].maxRSSI);
+    Serial.print(" dBm, Avg: ");
+    Serial.print(results[topIdx].avgRSSI);
+    Serial.println(" dBm");
+  }
+  
+  Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  Serial.println("🎯 OPTIMAL FREQUENCY:");
+  Serial.println();
+  Serial.print("   Frequency:     ");
+  Serial.print(results[bestIdx].freq / 1000000.0, 3);
+  Serial.println(" MHz");
+  Serial.print("   Max RSSI:      ");
+  Serial.print(results[bestIdx].maxRSSI);
+  Serial.println(" dBm");
+  Serial.print("   Avg RSSI:      ");
+  Serial.print(results[bestIdx].avgRSSI);
+  Serial.println(" dBm");
+  Serial.println();
+  
+  // Calculate FREQ register values
+  uint32_t freq = results[bestIdx].freq;
+  uint32_t freqReg = ((uint64_t)freq * 65536ULL) / 26000000ULL;
+  uint8_t freq2 = (freqReg >> 16) & 0xFF;
+  uint8_t freq1 = (freqReg >> 8) & 0xFF;
+  uint8_t freq0 = freqReg & 0xFF;
+  
+  Serial.println("📋 VALUES FOR CODE:");
+  Serial.println();
+  Serial.print("   cc1101_writeReg(0x0D, 0x");
+  Serial.print(freq2, HEX);
+  Serial.println(");  // FREQ2");
+  Serial.print("   cc1101_writeReg(0x0E, 0x");
+  Serial.print(freq1, HEX);
+  Serial.println(");  // FREQ1");
+  Serial.print("   cc1101_writeReg(0x0F, 0x");
+  Serial.print(freq0, HEX);
+  Serial.println(");  // FREQ0");
+  
+  Serial.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  
+  // Signal quality assessment
+  if (results[bestIdx].maxRSSI > -60) {
+    Serial.println("✅ EXCELLENT SIGNAL! Remote works great.");
+  } else if (results[bestIdx].maxRSSI > -70) {
+    Serial.println("✅ GOOD SIGNAL! Should work without issues.");
+  } else if (results[bestIdx].maxRSSI > -80) {
+    Serial.println("⚠️  WEAK SIGNAL - check antenna and distance.");
+  } else {
+    Serial.println("❌ VERY WEAK SIGNAL - possible antenna problem!");
+  }
+  
+  Serial.println();
+}
+
+//==============================================================================
+// Setup and Loop
+//==============================================================================
+
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+  
+  Serial.println("\n\n");
+  Serial.println("╔════════════════════════════════════════════════════════════╗");
+  Serial.println("║     ESP32 + CC1101 - FREQUENCY SCANNER                     ║");
+  Serial.println("║     Version 1.0 - PPTG                                     ║");
+  Serial.println("╚════════════════════════════════════════════════════════════╝");
+  Serial.println();
+  
+  pinMode(PIN_SS, OUTPUT);
+  pinMode(PIN_GDO2, INPUT);
+  digitalWrite(PIN_SS, HIGH);
+  
+  SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI, PIN_SS);
+  SPI.setFrequency(1000000);
+  SPI.setDataMode(SPI_MODE0);
+  SPI.setBitOrder(MSBFIRST);
+  
+  delay(100);
+  
+  cc1101_init();
+  
+  // Scan frequencies
+  scanFrequencies();
+  
+  // Analyze results
+  analyzeResults();
+  
+  Serial.println("\nProgram finished. Reset ESP32 to scan again.\n");
+}
+
+void loop() {
+  // Empty loop - everything happens in setup()
+  delay(1000);
+}
