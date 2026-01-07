@@ -50,7 +50,7 @@ Files:
 
 - **HomeAssistantMQTT.txt** - MQTT configuration file for HA
 
-- **tools* - The “tools” folder contains helpful programs that allow you to determine the correct connection of the cc1101 module,
+- **tools** - The “tools” folder contains helpful programs that allow you to determine the correct connection of the cc1101 module,
  detect the current frequency of the remote control, and tune to the required frequency. 
 
 ### 🛠️ Required Hardware
