@@ -9,6 +9,8 @@
 
 ### 📡 RF Protocol
 
+### ⚠️ The protocol documentation is being created, may be inaccurate, and may contain errors! Updates coming soon :) ### 
+
 #### Parameters
 - **Frequency:** 433.937 MHz
 - **Modulation:** 2-FSK
@@ -320,6 +322,8 @@ Correct signal:
 ## 🇵🇱 WERSJA POLSKA
 
 ### 📡 Protokół RF
+
+### ⚠️ Dokumentacja protokołu powstaje, może być nie precyzyjna i zawierać błędy ! aktualizacje niebawem :) ### 
 
 #### Parametry
 - **Częstotliwość:** 433.937 MHz
