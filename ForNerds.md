@@ -34,7 +34,7 @@ This is the key to understanding the entire protocol:
 [1]     = 0x00 (type: STATUS)
 [2-5]   = Heater address (32-bit)
 [6]     = State (0=OFF, 5=RUNNING, etc.)
-[7]     = Power (%)
+[7]     = Error codes
 [8-9]   = Voltage (big-endian, /10 = V)
 [10]    = Ambient temperature (°C, signed)
 [11]    = Error (0x00 = OK)
@@ -93,6 +93,26 @@ This is the key to understanding the entire protocol:
 | `0x06` | SHUTDOWN | Shutting down |
 | `0x07` | SHUTTING_DOWN | Shutting down |
 | `0x08` | COOLING | Cooling |
+
+### Complete Error Map [7]
+
+| CODE | ERROR DESCRIPTION                               |
+|------|-------------------------------------------------|
+| 0x00 | ✅ NO ERROR - normal operation                 |
+| 0x01 | ⚡ ON - Starting / Preparation phase           |
+| 0x02 | 🔋 UNDERVOLTAGE - Supply voltage too low       |
+| 0x03 | ⚡ OVERVOLTAGE - Supply voltage too high       |
+| 0x04 | 🔌 SPARK PLUG ERROR - Glow plug failure        |
+| 0x05 | 🛢️ OIL PUMP ERROR - Fuel pump malfunction      |
+| 0x06 | 🌡️ OVERHEAT ERROR - Overheating condition      |
+| 0x07 | ⚙️ MOTOR ERROR - Motor / fan failure           |
+| 0x08 | 🔌 DISCONNECT ERROR - Connection error         |
+| 0x09 | 🔥 EXTINGUISHED - Flame out / loss of combustion |
+| 0x0A | 🌡️ SENSOR ERROR - Temperature sensor failure   |
+| 0x0B | 🔥 IGNITION ERROR - Ignition failure           |
+| 0x0C | ⏸️ STANDBY - Standby mode / Ready state        |
+
+---
 
 
 ### 🔐 Whitelist & Controller Versions
@@ -382,7 +402,7 @@ To jest klucz do zrozumienia całego protokołu:
 [1]     = 0x00 (typ: STATUS)
 [2-5]   = Adres ogrzewacza (32-bit)
 [6]     = Stan (0=OFF, 5=RUNNING, itd.)
-[7]     = Moc (%)
+[7]     = Kody błędu 
 [8-9]   = Napięcie (big-endian, /10 = V)
 [10]    = Temperatura otoczenia (°C, signed)
 [11]    = Błąd (0x00 = OK)
@@ -443,6 +463,26 @@ To jest klucz do zrozumienia całego protokołu:
 | `0x07` | SHUTTING_DOWN | Wyłączanie |
 | `0x08` | COOLING | Chłodzenie |
 
+
+### Kompletna Mapa Błędów [7]
+
+| KOD  | OPIS BŁĘDU                                      |
+|------|-------------------------------------------------|
+| 0x00 | ✅ BRAK BŁĘDU - normalna praca                 |
+| 0x01 | ⚡ ON - Uruchamianie / Przygotowanie           |
+| 0x02 | 🔋 UNDERVOLTAGE - Zbyt niskie napięcie         |
+| 0x03 | ⚡ OVERVOLTAGE - Zbyt wysokie napięcie         |
+| 0x04 | 🔌 SPARK PLUG ERROR - Błąd świecy żarowej     |
+| 0x05 | 🛢️ OIL PUMP ERROR - Awaria pompy paliwa        |
+| 0x06 | 🌡️ OVERHEAT ERROR - Przegrzanie                |
+| 0x07 | ⚙️ MOTOR ERROR - Awaria silnika / wentylatora  |
+| 0x08 | 🔌 DISCONNECT ERROR - Błąd połączenia          |
+| 0x09 | 🔥 EXTINGUISHED - Zgaszony / Utrata płomienia  |
+| 0x0A | 🌡️ SENSOR ERROR - Błąd czujnika temperatury    |
+| 0x0B | 🔥 IGNITION ERROR - Błąd zapłonu               |
+| 0x0C | ⏸️ STANDBY - Tryb oczekiwania / Gotowość       |
+
+---
 
 ### 🔐 Whitelist i wersje sterowników
 
