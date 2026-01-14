@@ -489,7 +489,7 @@ To jest klucz do zrozumienia całego protokołu:
 | Cecha | V2 "Wrench" | V1 "SUN" |
 |-------|-------------|----------|
 | **Sloty whitelist** | 1 | 2 |
-| **Nowe parowanie** | Nadpisuje | Uzupełnia |
+| **Nowe parowanie** | Nadpisuje | naspisuje wybrany slot |
 | **Klonowanie adresu** | Tak | Opcjonalne |
 | **Status wsparcia** | ✅ Stabilne | ⚠️ w rozwoju |
 
