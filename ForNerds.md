@@ -315,7 +315,7 @@ rtl_433 -f 433920000 -s 250000 -R 0 \
 | **[1]** | `00` | Packet type | STATUS (operation) |
 | **[2-5]** | `ca 00 44 5b` | Remote address | 0xCA00445B |
 | **[6]** | `05` | State | RUNNING (5) |
-| **[7]** | `01` | Error codes |  |
+| **[7]** | `01` | Error codes | ON (normal) |
 | **[8-9]** | `00 83` | Voltage (BE) | 13.1V (131/10) |
 | **[10]** | `0a` | Ambient temp | 10°C |
 | **[11]** | `00` | Error | OK (0) |
@@ -683,7 +683,7 @@ rtl_433 -f 433920000 -s 250000 -R 0 \
 | **[1]** | `00` | Typ pakietu | STATUS (praca) |
 | **[2-5]** | `ca 00 44 5b` | Adres pilota | 0xCA00445B |
 | **[6]** | `05` | Stan | RUNNING (5) |
-| **[7]** | `01` | Kod błędu | |
+| **[7]** | `01` | Kod błędu | ON (normalny) |
 | **[8-9]** | `00 83` | Napięcie (BE) | 13.1V (131/10) |
 | **[10]** | `0a` | Temp. otoczenia | 10°C |
 | **[11]** | `00` | Błąd | OK (0) |
