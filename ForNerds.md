@@ -68,7 +68,7 @@ This is the key to understanding the entire protocol:
 | `0x3C` | UP | Increase temp (AUTO) or pump (MANUAL) |
 | `0x3E` | DOWN | Decrease temp (AUTO) or pump (MANUAL) |
 
-#### Operating Modes
+#### Operating Modes [14]
 
 **AUTO (Thermostat):**
 - Heater controls pump automatically
@@ -80,7 +80,7 @@ This is the key to understanding the entire protocol:
 - UP/DOWN adjusts pump Hz
 - Indicator: `[14] = 0xCD`
 
-#### Heater States
+#### Heater States [6]
 
 | Code | Name | Description |
 |------|------|-------------|
@@ -437,7 +437,7 @@ To jest klucz do zrozumienia całego protokołu:
 | `0x3C` | UP | Zwiększ temp (AUTO) lub pompę (MANUAL) |
 | `0x3E` | DOWN | Zmniejsz temp (AUTO) lub pompę (MANUAL) |
 
-#### Tryby pracy
+#### Tryby pracy [14]
 
 **AUTO (Termostat):**
 - Ogrzewacz kontroluje pompę automatycznie
@@ -449,7 +449,7 @@ To jest klucz do zrozumienia całego protokołu:
 - UP/DOWN reguluje Hz pompy
 - Wskaźnik: `[14] = 0xCD`
 
-#### Stany ogrzewacza
+#### Stany ogrzewacza [6]
 
 | Kod | Nazwa | Opis |
 |-----|-------|------|
