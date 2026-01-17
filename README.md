@@ -465,6 +465,7 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 <img width="874" height="730" alt="WEB" src="https://github.com/user-attachments/assets/a4e0e552-14da-4d78-8f53-31c4da614f80" />
 <img width="300" height="200" alt="Main" src="https://github.com/user-attachments/assets/60ad6659-44c4-4aa2-b6ba-24122151368d" />
 <img width="300" height="200" alt="OTA" src="https://github.com/user-attachments/assets/144348e6-a0b6-4a15-8c61-f9c249082756" />
+<img width="300" height="200" alt="Auto" src="https://github.com/user-attachments/assets/b692eaf9-2e64-407b-a2cd-5df985432718" />
 
 <img width="643" height="944" alt="Zrzut ekranu 2026-01-05 151325" src="https://github.com/user-attachments/assets/e2bd8273-1ace-4bec-9c46-a75536e3ab33" />
 
