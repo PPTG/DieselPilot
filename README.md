@@ -22,7 +22,7 @@ Use at your own risk!!!!
 - There is also a version of the controller with a ☀️ symbol.
 - It is possible to add support as soon as I manage to buy one and map the data frames from the radio.
 - However, I currently only support versions with the 🔧 symbol!!!
-- You can find out more in the Compatibility.md file
+- You can find out more in the Wiki page.
 
 ![edited](https://github.com/user-attachments/assets/3b78064b-d00a-4f14-a39b-06667b446803)
 
@@ -257,7 +257,7 @@ Używasz na własne ryzyko !!!!
 - Przetestowałem dwa kontrolery zawierające 🔧 jako górny lewy przycisk, jeden miał pilot czerwony drugi czarny oba działają.
 - Jest jeszcze wersja sterownika z symbolem ☀️ jest możliwe dodanie wsparcia jak tylko uda mi się taki kupić i zmapować ramki danych  z radia,
 - Natomiast aktualnie wspieram tylko wersje z symbolem 🔧!!!
-- Możesz dowiedzieć się więcej w pliku Compatibility.md
+- Możesz dowiedzieć się więcej w zakładce Wiki
 
 ![edited](https://github.com/user-attachments/assets/b8a33a3f-0c65-4451-8a56-ab2ca61467db)
 
