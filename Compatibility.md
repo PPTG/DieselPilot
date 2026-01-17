@@ -23,7 +23,7 @@
 ![IMG_20260109_223352](https://github.com/user-attachments/assets/1de23130-cdca-46f9-bbbf-cf36d2c90a35)
 ![IMG_20260109_223010](https://github.com/user-attachments/assets/6ab1dce6-81a8-4804-b49a-9e1fc421e449)
 ![IMG_20260109_222952](https://github.com/user-attachments/assets/3ce1a0d0-034f-4481-86bc-d5314c74ba94)
-<img width="1593" height="2328" alt="IMG_20260109_223436" src="https://github.com/user-attachments/assets/50333d4c-17df-4266-8b8a-35f1514e6fda" />
+<img width="500" height="700" alt="IMG_20260109_223436" src="https://github.com/user-attachments/assets/50333d4c-17df-4266-8b8a-35f1514e6fda" />
 
 
 
