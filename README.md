@@ -47,11 +47,9 @@ Release V1.1
 Files:
 - **DieselPilot.ino** - Application code
 
-- **ForNerds.md** - Communication protocol analysis, used tools and debugging
-
 - **HomeAssistantMQTT.txt** - MQTT configuration file for HA
-
-- **Compatibility.md** - File with detailed photos, compatibility description
+  
+- Protocol documentation and compatibility moved to the wiki page
 
 - **tools** - The “tools” folder contains helpful programs that allow you to determine the correct connection of the cc1101 module,
  detect the current frequency of the remote control, and tune to the required frequency. 
@@ -284,11 +282,9 @@ Wydanie V1.1
 Pliki:
 - **DieselPilot.ino** - Kod aplikacji
 
-- **ForNerds.md** - Analiza protokołu komunikacji, narzędzia i debug
-
-- **Compatibility.md** - Plik z dokładnymi zdjęciami, opisem kompatybilności
-
 - **HomeAsistantMQTT.txt** - Plik konfiguracji MQTT dla HA
+
+- **Dokumentacja protokołu oraz kompatybilność przeniesiona do strony wiki**
 
 - **tools** -  Folder "tools" zawiera pomocne programy pozwalające ustalić poprawne podłączenie modułu cc1101 oraz wykryć aktualną częstotliwość pilota i dostroić się do wymaganej częstotliwości. 
 
