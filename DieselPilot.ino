@@ -1,6 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- *                        DIESEL PILOT WEB
+ *                        DIESEL PILOT WEB + ERROR CODES
  * ═══════════════════════════════════════════════════════════════════════════
  * 
  * Full-featured ESP32 controller for Chinese diesel heaters
@@ -12,6 +12,7 @@
  * - Auto/Manual pairing
  * - Real-time heater control
  * - MQTT integration (Home Assistant ready)
+ * - ERROR CODE DECODING (BYTE[7])
  * 
  * Hardware:
  * - ESP32
@@ -19,13 +20,13 @@
  * - SH1106 OLED (I2C)
  * 
  * ═══════════════════════════════════════════════════════════════════════════
- *                      Version: V1.1
+ *                      Version: V1.2 - ERROR CODES
  * ═══════════════════════════════════════════════════════════════════════════
- *Changes:
- * - Added optional MQTT authentication.
- * - Added host name (the host name is also the device name in MQTT, the publication topic can be set as before).
- * - Added restart button.
- * - Added MQTT retry mechanism (no more esp failures after incorrect configuration).
+ * Changes:
+ * - Added error code decoding from BYTE[7]
+ * - Error display in web interface
+ * - Error code published to MQTT
+ * - Error history tracking (last 10 errors)
  */
 
 
@@ -36,6 +37,7 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <U8g2lib.h>
+#include <ArduinoOTA.h>
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HARDWARE CONFIG
@@ -52,8 +54,8 @@
 #define PIN_SDA   21
 #define PIN_SCL   22
 
-// OLED Configuration - set to false if you don't have OLED display
-#define USE_OLED  true  // Change to false to disable OLED
+// OLED Configuration
+#define USE_OLED  true
 
 // Commands
 #define CMD_WAKEUP 0x23
@@ -73,6 +75,21 @@
 #define STATE_SHUTTING_DOWN  7
 #define STATE_COOLING        8
 
+// Error Codes (BYTE[7])
+#define ERR_NONE           0x00  // ✅ NO ERROR
+#define ERR_ON             0x01  // ⚡ ON - Starting
+#define ERR_UNDERVOLTAGE   0x02  // 🔋 UNDERVOLTAGE
+#define ERR_OVERVOLTAGE    0x03  // ⚡ OVERVOLTAGE
+#define ERR_SPARK_PLUG     0x04  // 🔌 SPARK PLUG ERROR
+#define ERR_OIL_PUMP       0x05  // 🛢️ OIL PUMP ERROR
+#define ERR_OVERHEAT       0x06  // 🌡️ OVERHEAT ERROR
+#define ERR_MOTOR          0x07  // ⚙️ MOTOR ERROR
+#define ERR_DISCONNECT     0x08  // 🔌 DISCONNECT ERROR
+#define ERR_EXTINGUISHED   0x09  // 🔥 EXTINGUISHED
+#define ERR_SENSOR         0x0A  // 🌡️ SENSOR ERROR
+#define ERR_IGNITION       0x0B  // 🔥 IGNITION ERROR
+#define ERR_STANDBY        0x0C  // ⏸️ STANDBY
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL OBJECTS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -87,6 +104,8 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 // GLOBAL VARIABLES
 // ═══════════════════════════════════════════════════════════════════════════
 
+//Versions
+String version = "1.2";
 // WiFi
 String apSSID = "Diesel-Pilot";
 String apPassword = "12345678";
@@ -104,6 +123,10 @@ String mqttPassword = "";
 bool mqttAuthEnabled = false;
 bool mqttEnabled = false;
 
+// OTA
+String otaPassword = "dieselpilot";  // Default OTA password
+bool otaEnabled = true;              // OTA enabled by default
+
 // Heater
 uint32_t heaterAddress = 0x00000000;
 uint8_t packetSeq = 0;
@@ -120,8 +143,17 @@ struct {
     uint8_t pumpFreq = 0;
     bool autoMode = false;
     int16_t rssi = 0;
+    uint8_t errorCode = 0;  // NEW: Error code from BYTE[7]
     unsigned long lastUpdate = 0;
 } heaterStatus;
+
+// Error History (last 10 errors)
+struct ErrorHistoryEntry {
+    uint8_t errorCode;
+    unsigned long timestamp;
+};
+ErrorHistoryEntry errorHistory[10];
+int errorHistoryIndex = 0;
 
 // Display
 String displayLine1 = "Diesel Pilot";
@@ -133,7 +165,42 @@ String displayLine4 = "";
 unsigned long lastUpdate = 0;
 unsigned long lastDisplay = 0;
 unsigned long lastMQTTRetry = 0;
-const unsigned long mqttRetryInterval = 30000; // Retry MQTT every 30 seconds if disconnected
+const unsigned long mqttRetryInterval = 30000;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ERROR CODE DECODER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const char* getErrorName(uint8_t code) {
+    switch(code) {
+        case ERR_NONE:         return "NORMAL";      // Normal for OFF
+        case ERR_ON:           return "NORMAL";      // Normal for ON
+        case ERR_UNDERVOLTAGE: return "UNDERVOLTAGE";
+        case ERR_OVERVOLTAGE:  return "OVERVOLTAGE";
+        case ERR_SPARK_PLUG:   return "SPARK PLUG";
+        case ERR_OIL_PUMP:     return "OIL PUMP";
+        case ERR_OVERHEAT:     return "OVERHEAT";
+        case ERR_MOTOR:        return "MOTOR";
+        case ERR_DISCONNECT:   return "DISCONNECT";
+        case ERR_EXTINGUISHED: return "EXTINGUISHED";
+        case ERR_SENSOR:       return "SENSOR";
+        case ERR_IGNITION:     return "IGNITION";
+        case ERR_STANDBY:      return "STANDBY";
+        default:               return "UNKNOWN";
+    }
+}
+
+
+
+void addErrorToHistory(uint8_t errorCode) {
+    // Only add if it's not ERR_NONE and different from last error
+    if(errorCode == ERR_NONE) return;
+    if(errorHistoryIndex > 0 && errorHistory[(errorHistoryIndex - 1) % 10].errorCode == errorCode) return;
+    
+    errorHistory[errorHistoryIndex % 10].errorCode = errorCode;
+    errorHistory[errorHistoryIndex % 10].timestamp = millis();
+    errorHistoryIndex++;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CC1101 LOW-LEVEL FUNCTIONS
@@ -362,7 +429,8 @@ void updateHeaterStatus() {
         
         if(addr == heaterAddress) {
             heaterStatus.state = buf[6];
-            heaterStatus.power = buf[7];
+            heaterStatus.power = buf[7];           // BYTE[7] = ERROR CODE!
+            heaterStatus.errorCode = buf[7];       // Store error code
             heaterStatus.voltage = buf[9];
             heaterStatus.ambientTemp = (int8_t)buf[10];
             heaterStatus.caseTemp = buf[12];
@@ -371,6 +439,9 @@ void updateHeaterStatus() {
             heaterStatus.pumpFreq = buf[15];
             heaterStatus.rssi = (buf[23] - (buf[23] >= 128 ? 256 : 0)) / 2 - 74;
             heaterStatus.lastUpdate = millis();
+            
+            // Add error to history if not ERR_NONE
+            addErrorToHistory(heaterStatus.errorCode);
             
             // Publish to MQTT
             if(mqttEnabled && mqtt.connected()) {
@@ -410,6 +481,68 @@ const char* getStateName(uint8_t state) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// OTA FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+void setupOTA() {
+    if(!otaEnabled) return;
+    
+    ArduinoOTA.setHostname(deviceName.c_str());
+    ArduinoOTA.setPassword(otaPassword.c_str());
+    
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH) {
+            type = "sketch";
+        } else {
+            type = "filesystem";
+        }
+        Serial.println("OTA: Start updating " + type);
+        displayLine1 = "OTA UPDATE";
+        displayLine2 = "Updating...";
+        displayLine3 = "DO NOT";
+        displayLine4 = "POWER OFF!";
+        updateDisplay();
+    });
+    
+    ArduinoOTA.onEnd([]() {
+        Serial.println("\nOTA: Update complete");
+        displayLine2 = "Complete!";
+        displayLine3 = "Rebooting...";
+        displayLine4 = "";
+        updateDisplay();
+    });
+    
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        unsigned int percent = (progress / (total / 100));
+        Serial.printf("OTA Progress: %u%%\r", percent);
+        displayLine2 = "Progress: " + String(percent) + "%";
+        updateDisplay();
+    });
+    
+    ArduinoOTA.onError([](ota_error_t error) {
+        Serial.printf("OTA Error[%u]: ", error);
+        if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+        else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+        else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+        else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+        else if (error == OTA_END_ERROR) Serial.println("End Failed");
+        
+        displayLine1 = "OTA ERROR!";
+        displayLine2 = "Error: " + String(error);
+        displayLine3 = "Rebooting...";
+        displayLine4 = "";
+        updateDisplay();
+        delay(3000);
+        ESP.restart();
+    });
+    
+    ArduinoOTA.begin();
+    Serial.println("✅ OTA enabled on port 3232");
+    Serial.println("   Hostname: " + deviceName);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MQTT FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -435,7 +568,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 void connectMQTT() {
     if(!mqttEnabled || mqttServer.length() == 0) return;
     
-    // Disconnect if already connected
     if(mqtt.connected()) {
         mqtt.disconnect();
         delay(100);
@@ -443,11 +575,10 @@ void connectMQTT() {
     
     mqtt.setServer(mqttServer.c_str(), mqttPort);
     mqtt.setCallback(mqttCallback);
-    mqtt.setBufferSize(512);  // Increase buffer for auth
+    mqtt.setBufferSize(512);
     
-    // Try connecting with retry mechanism
     const int maxRetries = 3;
-    const int retryDelay = 2000; // 2 seconds between retries
+    const int retryDelay = 2000;
     
     for(int attempt = 1; attempt <= maxRetries; attempt++) {
         Serial.print("MQTT connection attempt " + String(attempt) + "/" + String(maxRetries) + "... ");
@@ -462,10 +593,9 @@ void connectMQTT() {
         if(connected) {
             Serial.println("✅ Connected!");
             mqtt.subscribe((mqttTopic + "/cmd/#").c_str());
-            return; // Success - exit function
+            return;
         } else {
             Serial.println("❌ Failed (State: " + String(mqtt.state()) + ")");
-            
             if(attempt < maxRetries) {
                 Serial.println("Retrying in " + String(retryDelay/1000) + " seconds...");
                 delay(retryDelay);
@@ -473,15 +603,13 @@ void connectMQTT() {
         }
     }
     
-    // All retries failed
-    Serial.println("⚠️ MQTT connection failed after " + String(maxRetries) + " attempts. Continuing without MQTT.");
+    Serial.println("⚠️ MQTT connection failed after " + String(maxRetries) + " attempts.");
 }
 
 void publishMQTT() {
     if(!mqtt.connected()) return;
     
     mqtt.publish((mqttTopic + "/state").c_str(), getStateName(heaterStatus.state));
-    mqtt.publish((mqttTopic + "/power").c_str(), String(heaterStatus.power).c_str());
     mqtt.publish((mqttTopic + "/voltage").c_str(), String(heaterStatus.voltage / 10.0, 1).c_str());
     mqtt.publish((mqttTopic + "/ambient").c_str(), String(heaterStatus.ambientTemp).c_str());
     mqtt.publish((mqttTopic + "/case").c_str(), String(heaterStatus.caseTemp).c_str());
@@ -489,6 +617,9 @@ void publishMQTT() {
     mqtt.publish((mqttTopic + "/pump").c_str(), String(heaterStatus.pumpFreq / 10.0, 1).c_str());
     mqtt.publish((mqttTopic + "/mode").c_str(), heaterStatus.autoMode ? "AUTO" : "MANUAL");
     mqtt.publish((mqttTopic + "/rssi").c_str(), String(heaterStatus.rssi).c_str());
+    
+    // ERROR: Only short name (perfect for OLED and HA history)
+    mqtt.publish((mqttTopic + "/error").c_str(), getErrorName(heaterStatus.errorCode));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -498,12 +629,50 @@ void publishMQTT() {
 void updateDisplay() {
 #if USE_OLED
     display.clearBuffer();
-    display.setFont(u8g2_font_6x10_tf);
     
-    display.drawStr(0, 10, displayLine1.c_str());
-    display.drawStr(0, 25, displayLine2.c_str());
-    display.drawStr(0, 40, displayLine3.c_str());
-    display.drawStr(0, 55, displayLine4.c_str());
+    // === HEADER with frame ===
+    display.drawFrame(0, 0, 128, 12);
+    display.setFont(u8g2_font_6x10_tf);
+    display.drawStr(4, 9, displayLine1.c_str());
+    
+    // === MAIN CONTENT AREA ===
+    display.setFont(u8g2_font_7x13_tf);
+    
+    // Line 2 - Big and bold
+    display.drawStr(2, 26, displayLine2.c_str());
+    
+    // Line 3 - Medium
+    display.setFont(u8g2_font_6x10_tf);
+    display.drawStr(2, 40, displayLine3.c_str());
+    
+    // Line 4 - Small info
+    display.setFont(u8g2_font_5x8_tf);
+    display.drawStr(2, 52, displayLine4.c_str());
+    
+    // === FOOTER - Status bar ===
+    if(heaterPaired && heaterStatus.lastUpdate > 0) {
+        // WiFi/MQTT/OTA icons at bottom
+        String footer = "";
+        
+        // WiFi status
+        if(!useAP) {
+            footer += "WiFi ";
+        } else {
+            footer += "AP ";
+        }
+        
+        // MQTT status
+        if(mqttEnabled && mqtt.connected()) {
+            footer += "| MQTT ";
+        }
+        
+        // OTA status
+        if(otaEnabled && !useAP) {
+            footer += "| OTA";
+        }
+        
+        display.drawStr(2, 63, footer.c_str());
+    }
     
     display.sendBuffer();
 #endif
@@ -602,6 +771,26 @@ void handleRoot() {
         .state-other { color: #ff9800; }
         .mode-auto { color: #2196F3; }
         .mode-manual { color: #9C27B0; }
+        .error-ok { color: #4CAF50; }
+        .error-warning { color: #ff9800; }
+        .error-critical { color: #f44336; }
+        
+        /* ERROR ALERT BOX */
+        .error-alert {
+            background: #1a0000;
+            border: 2px solid #f44336;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-alert.active { display: block; }
+        .error-alert-title {
+            color: #f44336;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
         .btn {
             background: #ff6b00;
             color: white;
@@ -655,7 +844,6 @@ void handleRoot() {
         }
         .info-box strong { color:#ff6b00; }
         
-        /* TOGGLE SWITCH */
         .toggle-container {
             display: flex;
             align-items: center;
@@ -720,6 +908,11 @@ void handleRoot() {
         <!-- DASHBOARD TAB -->
         <div id="dashboard" class="tab-content active">
             
+            <!-- ERROR ALERT -->
+            <div id="errorAlert" class="error-alert">
+                <div class="error-alert-title" id="errorTitle">⚠️ ERROR DETECTED</div>
+            </div>
+            
             <!-- STATUS -->
             <div class="card">
                 <h2>📊 Status</h2>
@@ -727,6 +920,10 @@ void handleRoot() {
                     <div class="status-item">
                         <div class="status-label">State</div>
                         <div class="status-value" id="state">-</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Error Code</div>
+                        <div class="status-value" id="errorCode">-</div>
                     </div>
                     <div class="status-item">
                         <div class="status-label">Mode</div>
@@ -803,8 +1000,7 @@ void handleRoot() {
                 <button class="btn" onclick="saveWiFi()">💾 SAVE & REBOOT</button>
                 <div class="info-box">
                     <strong>📛 Hostname:</strong> Device name used for WiFi hostname and MQTT Client ID.<br>
-                    <strong>ℹ️ Note:</strong> After saving, ESP32 will reboot and connect to your WiFi.<br>
-                    If connection fails, it will fall back to AP mode.
+                    <strong>ℹ️ Note:</strong> After saving, ESP32 will reboot and connect to your WiFi.
                 </div>
             </div>
             
@@ -830,7 +1026,29 @@ void handleRoot() {
                 <button class="btn" onclick="saveMQTT()">💾 SAVE MQTT</button>
                 <div class="info-box">
                     <strong>🏠 Home Assistant:</strong> Configure MQTT broker IP and topic.<br>
-                    Topics: <code>topic/state</code>, <code>topic/cmd/power</code>, etc.
+                    Topic: <code>diesel/error</code> - Short error name (perfect for HA history)
+                </div>
+            </div>
+            
+            <!-- OTA CONFIG -->
+            <div class="card">
+                <h2>🔄 OTA Update Configuration</h2>
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="otaEnabled" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Enable OTA Updates</span>
+                </div>
+                <input type="password" id="otaPassword" placeholder="OTA Password (default: dieselpilot)">
+                <button class="btn" onclick="saveOTA()">💾 SAVE OTA CONFIG</button>
+                <div class="info-box">
+                    <strong>📡 OTA Updates:</strong> Update firmware wirelessly using Arduino IDE or PlatformIO.<br>
+                    <strong>Port:</strong> 3232 | <strong>Hostname:</strong> <span id="otaHostname">-</span><br>
+                    <strong>⚠️ Security:</strong> Change default password for better security!<br>
+                    <br>
+                    <strong>Arduino IDE:</strong> Tools → Port → Network Ports → [hostname]<br>
+                    <strong>Command Line:</strong> <code>platformio run -t upload --upload-port [IP]</code>
                 </div>
             </div>
             
@@ -842,11 +1060,16 @@ void handleRoot() {
                     <div>WiFi Mode: <span id="wifiMode">-</span></div>
                     <div>IP Address: <span id="ipAddr">-</span></div>
                     <div>MQTT: <span id="mqttStatus">-</span></div>
+                    <div>OTA: <span id="otaStatus">-</span></div>
                     <div>Uptime: <span id="uptime">-</span></div>
                 </div>
-                <button class="btn" onclick="rebootDevice()" style="margin-top: 15px; background: #d32f2f;">🔄 REBOOT DEVICE</button>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="rebootDevice()" style="background: #ff9800;">🔄 REBOOT DEVICE</button>
+                    <button class="btn" onclick="factoryReset()" style="background: #d32f2f;">⚠️ FACTORY RESET</button>
+                </div>
                 <div class="info-box">
-                    <strong>⚠️ Warning:</strong> Device will restart immediately. Use after config changes.
+                    <strong>🔄 Reboot:</strong> Restarts device without losing settings.<br>
+                    <strong>⚠️ Factory Reset:</strong> Erases ALL settings (WiFi, MQTT, OTA, pairing). Use to reconfigure from scratch.
                 </div>
             </div>
             
@@ -856,11 +1079,8 @@ void handleRoot() {
     <script>
         // TAB SWITCHING
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
-            // Show selected tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
         }
@@ -870,14 +1090,30 @@ void handleRoot() {
             fetch('/api/status')
                 .then(r => r.json())
                 .then(d => {
-                    // State with color
+                    // State
                     document.getElementById('state').innerText = d.state;
                     let stateEl = document.getElementById('state');
                     stateEl.className = 'status-value ' + 
                         (d.state === 'RUNNING' ? 'state-running' : 
                          d.state === 'OFF' ? 'state-off' : 'state-other');
                     
-                    // Mode with color
+                    // Error Code
+                    document.getElementById('errorCode').innerText = d.errorName;
+                    let errorEl = document.getElementById('errorCode');
+                    errorEl.className = 'status-value ' + 
+                        (d.errorCode === 0 ? 'error-ok' : 
+                         d.errorCode <= 1 ? 'error-warning' : 'error-critical');
+                    
+                    // Error Alert
+                    let errorAlert = document.getElementById('errorAlert');
+                    if(d.errorCode > 0 && d.errorCode !== 1 && d.errorCode !== 12) {
+                        errorAlert.classList.add('active');
+                        document.getElementById('errorTitle').innerText = '⚠️ ' + d.errorName;
+                    } else {
+                        errorAlert.classList.remove('active');
+                    }
+                    
+                    // Mode
                     document.getElementById('mode').innerText = d.mode;
                     let modeEl = document.getElementById('mode');
                     modeEl.className = 'status-value ' + 
@@ -889,7 +1125,7 @@ void handleRoot() {
                     document.getElementById('case').innerText = d.case + '°C';
                     document.getElementById('currentAddr').innerText = d.addr;
                     
-                    // Smart labels based on mode
+                    // Smart labels
                     if(d.mode === 'AUTO') {
                         document.getElementById('setpointLabel').innerText = 'Setpoint (°C)';
                         document.getElementById('pumpLabel').innerText = 'Pump (actual)';
@@ -910,9 +1146,11 @@ void handleRoot() {
                 .then(r => r.json())
                 .then(d => {
                     document.getElementById('hostname').innerText = d.hostname;
+                    document.getElementById('otaHostname').innerText = d.hostname;
                     document.getElementById('wifiMode').innerText = d.wifiMode;
                     document.getElementById('ipAddr').innerText = d.ip;
                     document.getElementById('mqttStatus').innerText = d.mqtt;
+                    document.getElementById('otaStatus').innerText = d.ota;
                     document.getElementById('uptime').innerText = d.uptime;
                 });
         }
@@ -966,11 +1204,35 @@ void handleRoot() {
                 .then(r => r.text()).then(alert);
         }
         
+        function saveOTA() {
+            let enabled = document.getElementById('otaEnabled').checked ? '1' : '0';
+            let password = document.getElementById('otaPassword').value;
+            
+            fetch('/api/ota?enabled=' + enabled + '&pass=' + encodeURIComponent(password))
+                .then(r => r.text()).then(msg => {
+                    alert(msg);
+                    if(enabled === '1') {
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                });
+        }
+        
         function rebootDevice() {
             if(confirm('Reboot device now?')) {
                 fetch('/api/reboot').then(() => {
                     alert('Device rebooting... Wait 10 seconds and refresh page.');
                 });
+            }
+        }
+        
+        function factoryReset() {
+            if(confirm('⚠️ FACTORY RESET - This will erase ALL settings!\n\nAre you absolutely sure?')) {
+                if(confirm('⚠️ FINAL WARNING!\n\nAll WiFi, MQTT, OTA configs and heater pairing will be lost!\n\nContinue?')) {
+                    fetch('/api/factory').then(() => {
+                        alert('Factory reset complete! Device will reboot in AP mode.\n\nSSID: Diesel-Pilot\nPassword: 12345678');
+                        setTimeout(() => location.reload(), 3000);
+                    });
+                }
             }
         }
         
@@ -997,7 +1259,12 @@ void handleAPI_Status() {
     json += "\"pump\":" + String(heaterStatus.pumpFreq / 10.0, 1) + ",";
     json += "\"mode\":\"" + String(heaterStatus.autoMode ? "AUTO" : "MANUAL") + "\",";
     json += "\"rssi\":" + String(heaterStatus.rssi) + ",";
-    json += "\"addr\":\"" + (heaterPaired ? String(heaterAddress, HEX) : "Not paired") + "\"";
+    json += "\"addr\":\"" + (heaterPaired ? String(heaterAddress, HEX) : "Not paired") + "\",";
+    
+    // Error: only short name
+    json += "\"errorCode\":" + String(heaterStatus.errorCode) + ",";
+    json += "\"errorName\":\"" + String(getErrorName(heaterStatus.errorCode)) + "\"";
+    
     json += "}";
     server.send(200, "application/json", json);
 }
@@ -1033,7 +1300,7 @@ void handleAPI_PairManual() {
 
 void handleAPI_WiFi() {
     deviceName = server.arg("deviceName");
-    if(deviceName.length() == 0) deviceName = "DieselPilot"; // default
+    if(deviceName.length() == 0) deviceName = "DieselPilot";
     staSSID = server.arg("ssid");
     staPassword = server.arg("pass");
     
@@ -1041,7 +1308,9 @@ void handleAPI_WiFi() {
     prefs.putString("staSSID", staSSID);
     prefs.putString("staPass", staPassword);
     
-    server.send(200, "text/plain", "WiFi saved! Reboot to connect.");
+    server.send(200, "text/plain", "WiFi saved! Rebooting...");
+    delay(1000);
+    ESP.restart();
 }
 
 void handleAPI_MQTT() {
@@ -1061,7 +1330,6 @@ void handleAPI_MQTT() {
     prefs.putString("mqttPass", mqttPassword);
     prefs.putBool("mqttEnabled", mqttEnabled);
     
-    // Update WiFi hostname (in case it changed)
     WiFi.setHostname(deviceName.c_str());
     
     server.send(200, "text/plain", "MQTT saved!");
@@ -1077,14 +1345,49 @@ void handleAPI_Info() {
     json += "\"wifiMode\":\"" + String(useAP ? "AP" : "STA") + "\",";
     json += "\"ip\":\"" + (useAP ? WiFi.softAPIP().toString() : WiFi.localIP().toString()) + "\",";
     json += "\"mqtt\":\"" + String(mqttEnabled && mqtt.connected() ? "Connected" : "Disconnected") + "\",";
+    json += "\"ota\":\"" + String(otaEnabled ? "Enabled" : "Disabled") + "\",";
     json += "\"uptime\":\"" + String(millis() / 1000 / 60) + " min\"";
     json += "}";
     server.send(200, "application/json", json);
 }
 
+void handleAPI_OTA() {
+    otaEnabled = (server.arg("enabled") == "1");
+    String newPass = server.arg("pass");
+    if(newPass.length() > 0) {
+        otaPassword = newPass;
+    }
+    
+    prefs.putBool("otaEnabled", otaEnabled);
+    prefs.putString("otaPass", otaPassword);
+    
+    server.send(200, "text/plain", "OTA config saved! Reboot to apply.");
+}
+
 void handleAPI_Reboot() {
     server.send(200, "text/plain", "Rebooting...");
     delay(500);
+    ESP.restart();
+}
+
+void handleAPI_Factory() {
+    server.send(200, "text/plain", "Factory reset in progress...");
+    
+    Serial.println("\n⚠️ FACTORY RESET - Clearing all preferences...");
+    
+    // Clear all stored preferences
+    prefs.clear();
+    
+    // Show on OLED
+    displayLine1 = "FACTORY RESET";
+    displayLine2 = "Clearing...";
+    displayLine3 = "All settings";
+    displayLine4 = "erased!";
+    updateDisplay();
+    
+    delay(2000);
+    
+    Serial.println("✅ Factory reset complete! Rebooting...");
     ESP.restart();
 }
 
@@ -1097,10 +1400,9 @@ void setup() {
     delay(1000);
     
     Serial.println("\n\n═══════════════════════════════════════");
-    Serial.println("    DIESEL PILOT WEB");
+    Serial.println("    DIESEL PILOT WEB + ERROR CODES");
     Serial.println("═══════════════════════════════════════\n");
     
-    // Init OLED (if enabled)
 #if USE_OLED
     Wire.begin(PIN_SDA, PIN_SCL);
     display.begin();
@@ -1111,12 +1413,11 @@ void setup() {
     displayLine4 = "Happy Heating :)";
     updateDisplay();
     Serial.println("✅ OLED initialized");
-    delay(1000);
+    delay(2000);
 #else
     Serial.println("ℹ️  OLED disabled");
 #endif
     
-    // Init Preferences
     prefs.begin("diesel", false);
     heaterAddress = prefs.getUInt("heaterAddr", 0);
     heaterPaired = (heaterAddress != 0);
@@ -1130,8 +1431,9 @@ void setup() {
     mqttUser = prefs.getString("mqttUser", "");
     mqttPassword = prefs.getString("mqttPass", "");
     mqttEnabled = prefs.getBool("mqttEnabled", false);
+    otaEnabled = prefs.getBool("otaEnabled", true);
+    otaPassword = prefs.getString("otaPass", "dieselpilot");
     
-    // Init CC1101
     pinMode(PIN_SCK, OUTPUT);
     pinMode(PIN_MOSI, OUTPUT);
     pinMode(PIN_MISO, INPUT);
@@ -1140,8 +1442,7 @@ void setup() {
     SPI.begin(PIN_SCK, PIN_MISO, PIN_MOSI, PIN_SS);
     cc1101_init();
     
-    // Init WiFi
-    WiFi.setHostname(deviceName.c_str());  // Set hostname for mDNS
+    WiFi.setHostname(deviceName.c_str());
     
     if(staSSID.length() > 0) {
         Serial.println("Connecting to WiFi: " + staSSID);
@@ -1172,7 +1473,6 @@ void setup() {
         WiFi.softAP(apSSID.c_str(), apPassword.c_str());
         Serial.println("✅ AP started");
         Serial.println("SSID: " + apSSID);
-        Serial.println("Pass: " + apPassword);
         Serial.println("IP: " + WiFi.softAPIP().toString());
         displayLine2 = "AP: " + apSSID;
         displayLine3 = WiFi.softAPIP().toString();
@@ -1181,12 +1481,15 @@ void setup() {
     displayLine4 = heaterPaired ? "Paired!" : "Not paired";
     updateDisplay();
     
-    // Init MQTT
+    // Init OTA (only if connected to WiFi, not in AP mode)
+    if(!useAP && otaEnabled) {
+        setupOTA();
+    }
+    
     if(mqttEnabled) {
         connectMQTT();
     }
     
-    // Init Web Server
     server.on("/", handleRoot);
     server.on("/api/status", handleAPI_Status);
     server.on("/api/info", handleAPI_Info);
@@ -1195,6 +1498,8 @@ void setup() {
     server.on("/api/pair/manual", handleAPI_PairManual);
     server.on("/api/wifi", handleAPI_WiFi);
     server.on("/api/mqtt", handleAPI_MQTT);
+    server.on("/api/ota", handleAPI_OTA);
+    server.on("/api/factory", handleAPI_Factory);
     server.on("/api/reboot", handleAPI_Reboot);
     server.begin();
     
@@ -1213,7 +1518,11 @@ void loop() {
     yield();
     server.handleClient();
     
-    // MQTT reconnect with timer (only retry every 30 seconds)
+    // Handle OTA updates
+    if(otaEnabled) {
+        ArduinoOTA.handle();
+    }
+    
     if(mqttEnabled && !mqtt.connected()) {
         if(millis() - lastMQTTRetry > mqttRetryInterval) {
             lastMQTTRetry = millis();
@@ -1224,24 +1533,48 @@ void loop() {
         mqtt.loop();
     }
     
-    // Update heater status every 3 seconds
     if(millis() - lastUpdate > 3000 && heaterPaired) {
         lastUpdate = millis();
         updateHeaterStatus();
     }
     
-    // Update display every 1 second
     if(millis() - lastDisplay > 1000) {
         lastDisplay = millis();
         
         if(heaterPaired && heaterStatus.lastUpdate > 0) {
+            // Line 1: Always title
+            displayLine1 = "DIESEL PILOT " + version;
+            
+            // Line 2: Big state name
             displayLine2 = String(getStateName(heaterStatus.state));
-            displayLine4 = String(heaterStatus.ambientTemp) + "C/" + 
-                          String(heaterStatus.setpoint) + "C " +
-                          String(heaterStatus.voltage / 10.0, 1) + "V";
+            
+            // Line 3: Temperature info or error
+            if(heaterStatus.errorCode > 1 && heaterStatus.errorCode != 12) {
+                // Critical error - show it!
+                displayLine3 = "! " + String(getErrorName(heaterStatus.errorCode)) + " !";
+            } else {
+                // Normal operation - show temps
+                if(heaterStatus.autoMode) {
+                    // AUTO mode - show ambient -> setpoint
+                    displayLine3 = String(heaterStatus.ambientTemp) + "C -> " + String(heaterStatus.setpoint) + "C";
+                } else {
+                    // MANUAL mode - show ambient + pump
+                    displayLine3 = String(heaterStatus.ambientTemp) + "C  P:" + String(heaterStatus.pumpFreq / 10.0, 1) + "Hz";
+                }
+            }
+            
+            // Line 4: Voltage + Mode
+            String modeIcon = heaterStatus.autoMode ? "A" : "M";
+            displayLine4 = String(heaterStatus.voltage / 10.0, 1) + "V  [" + modeIcon + "]  " + String(heaterStatus.caseTemp) + "C";
+            
+        } else if(heaterPaired) {
+            // Paired but no data yet
+            displayLine1 = "DIESEL PILOT";
+            displayLine2 = "Waiting...";
+            displayLine3 = "No data";
+            displayLine4 = "";
         }
         
         updateDisplay();
     }
 }
-
