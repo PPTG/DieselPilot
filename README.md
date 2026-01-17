@@ -14,7 +14,8 @@
 ⚠️ **IMPORTANT:** 
 Use at your own risk!!!!
 
-<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
+<img width="874" height="730" alt="WEB" src="https://github.com/user-attachments/assets/a3715ef1-9ef1-4257-a28f-77bb7ff2645d" />
+
 
 ### 🔧 Compatibility:
 
@@ -36,13 +37,6 @@ Use at your own risk!!!!
 - 🔗 **Pairing** - automatic and manual
 - 🎮 **Control** - POWER, UP, DOWN, MODE
 - 💾 **NVS Memory** - configuration survives reset
-
-### ⚙️ Changes
-Release V1.1
-- Added MQTT authentication option
-- Added reboot button
-- Fixed stability with incorrect MQTT data
-- Added Hostname field (Hostname is also the name of the MQTT device, the topic is set as before)
 
 Files:
 - **DieselPilot.ino** - Application code
@@ -182,13 +176,13 @@ MIT License - use as you wish, at your own risk!
 
 ### 🔮 Planned Features
 
-**0. Reading errors ❌**
-```
-- Mapping error code to message
-- Forcing/scanning possible controller errors
-- Adding error field in GUI
-- Adding error field in MQTT
-```
+~~**0. Reading errors ❌**~~ ✅ 
+
+- ~~Mapping error code to message~~ ✅
+- ~~Forcing/scanning possible controller errors~~ ✅
+- ~~Adding error field in GUI~~ ✅
+- ~~Adding error field in MQTT~~ ✅
+
 
 **1. Fuel Level Sensor ⛽**
 ```
@@ -250,7 +244,7 @@ MIT License - use as you wish, at your own risk!
 ⚠️ **WAŻNE:** 
 Używasz na własne ryzyko !!!!
 
-<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
+<img width="874" height="730" alt="WEB" src="https://github.com/user-attachments/assets/a3715ef1-9ef1-4257-a28f-77bb7ff2645d" />
 
 ### 🔧 Kompatybilność:
 
@@ -270,14 +264,6 @@ Używasz na własne ryzyko !!!!
 - 🔗 **Parowanie** - automatyczne i ręczne
 - 🎮 **Sterowanie** - POWER, UP, DOWN, MODE
 - 💾 **Pamięć NVS** - konfiguracja przetrwa reset
-
-### ⚙️ Changes
-
-Wydanie V1.1
-- Dodałem opcję uwierzytelniania MQTT
-- Dodałem przycisk reboot
-- Naprawiłem stabilność przy błędnych danych MQTT
-- Dodałem pole Hostname (Hostname to także nazwa urządzenia MQTT, temat ustawiamy jak dotychczas)
 
 Pliki:
 - **DieselPilot.ino** - Kod aplikacji
@@ -418,13 +404,13 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 
 ### 🔮 Planowane funkcje
 
-**0. Odczytywanie błędów ❌**
-```
-- Mapowanie kodu błędu do komunikatu
-- Wymuszenie/zeskanowanie możliwych błędów sterownika 
-- Dodanie pola błędu w GUI
-- Dodanie pola błędu w MQTT
-```
+**~~0. Odczytywanie błędów ❌~~**✅
+
+- ~~Mapowanie kodu błędu do komunikatu~~✅
+- ~~Wymuszenie/zeskanowanie możliwych błędów sterownika~~✅
+- ~~Dodanie pola błędu w GUI~~✅
+- ~~Dodanie pola błędu w MQTT~~✅
+
 
 **1. Czujnik poziomu paliwa ⛽**
 ```
@@ -476,7 +462,9 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 
 ### 📸 Zdjęcia i materiały
 
-<img width="882" height="776" alt="Zrzut ekranu 2026-01-04 022007" src="https://github.com/user-attachments/assets/c2cef19e-e951-46b3-9e6f-20fe6c7df986" />
+<img width="874" height="730" alt="WEB" src="https://github.com/user-attachments/assets/a4e0e552-14da-4d78-8f53-31c4da614f80" />
+<img width="300" height="200" alt="Main" src="https://github.com/user-attachments/assets/60ad6659-44c4-4aa2-b6ba-24122151368d" />
+<img width="300" height="200" alt="OTA" src="https://github.com/user-attachments/assets/144348e6-a0b6-4a15-8c61-f9c249082756" />
 
 <img width="643" height="944" alt="Zrzut ekranu 2026-01-05 151325" src="https://github.com/user-attachments/assets/e2bd8273-1ace-4bec-9c46-a75536e3ab33" />
 
