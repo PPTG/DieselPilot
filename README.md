@@ -37,6 +37,8 @@ Use at your own risk!!!!
 - 🔗 **Pairing** - automatic and manual
 - 🎮 **Control** - POWER, UP, DOWN, MODE
 - 💾 **NVS Memory** - configuration survives reset
+- ☁︎ **OTA UPDATE** - Since the release of V1.2
+  
 
 Files:
 - **DieselPilot.ino** - Application code
@@ -264,6 +266,7 @@ Używasz na własne ryzyko !!!!
 - 🔗 **Parowanie** - automatyczne i ręczne
 - 🎮 **Sterowanie** - POWER, UP, DOWN, MODE
 - 💾 **Pamięć NVS** - konfiguracja przetrwa reset
+- ☁︎ **OTA UPDATE** - Od wydania V1.2
 
 Pliki:
 - **DieselPilot.ino** - Kod aplikacji
