@@ -476,5 +476,6 @@ MIT License - użyj jak chcesz, na własną odpowiedzialność!
 
 <img width="2574" height="3227" alt="Device" src="https://github.com/user-attachments/assets/eea2903f-88ae-41e3-b676-d00306fc08db" />
 
-<img width="1646" height="809" alt="Zrzut ekranu 2026-01-03 223648" src="https://github.com/user-attachments/assets/e891a126-e5c3-4028-9862-442967b66352" />
+<img width="1657" height="863" alt="Zrzut ekranu 2026-01-17 212157" src="https://github.com/user-attachments/assets/0b88ff20-092f-4746-a39b-671355b59cc9" />
+
 
