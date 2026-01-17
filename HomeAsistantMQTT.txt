@@ -41,6 +41,11 @@ mqtt:
       state_topic: "diesel/mode"
       icon: mdi:cog
 
+    - name: "Diesel Heater Error"
+      state_topic: "diesel/error"
+      icon: mdi:alert
+    
+
   button:
     - name: "Diesel Heater Power"
       command_topic: "diesel/cmd/power"
@@ -61,4 +66,5 @@ mqtt:
       command_topic: "diesel/cmd/mode"
       payload_press: "1"
       icon: mdi:cog
+
 ```
