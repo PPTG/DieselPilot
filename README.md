@@ -24,8 +24,12 @@ Use at your own risk!!!!
 - The ☀️/⚙️ version with an older display type without a menu and with the option to adjust the power levels from H1 to H6 does not work with this project.
 - You can find out more in the Wiki tab.
 
+| Version 1.0 | Version 1.5 | Version 2.0 |
+|-----------|-------------|-------------|
+| <img src="https://github.com/user-attachments/assets/c7ae01d0-016e-47ff-843e-1f3d6831b990" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
+
 ![edited](https://github.com/user-attachments/assets/3b78064b-d00a-4f14-a39b-06667b446803)
-<img width="394" height="319" alt="image" src="https://github.com/user-attachments/assets/bb660e72-1fe7-475d-ac64-e7bef8101d1f" />
+
 
 
 ### ✨ Features
@@ -255,8 +259,12 @@ Używasz na własne ryzyko !!!!
 - Wersja ☀️/⚙️ posiadająca wyświetlacz starszego typu bez menu i z opcją regulacji stopni mocy od H1 do H6 nie działa z tym projektem.
 - Możesz dowiedzieć się więcej w zakładce Wiki
 
+| Wersja 1.0 | Wersja 1.5 | Wersja 2.0 |
+|-----------|-------------|-------------|
+| <img src="https://github.com/user-attachments/assets/c7ae01d0-016e-47ff-843e-1f3d6831b990" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
+
 ![edited](https://github.com/user-attachments/assets/b8a33a3f-0c65-4451-8a56-ab2ca61467db)
-<img width="394" height="319" alt="image" src="https://github.com/user-attachments/assets/bb660e72-1fe7-475d-ac64-e7bef8101d1f" />
+
 
 
 ### ✨ Funkcje
