@@ -19,13 +19,13 @@ Use at your own risk!!!!
 
 ### 🔧 Compatibility:
 
-- I tested two controllers with 🔧 as the upper left button,one had a red remote control, the other a black one, both works.
-- There is also a version of the controller with a ☀️ symbol.
-- It is possible to add support as soon as I manage to buy one and map the data frames from the radio.
-- However, I currently only support versions with the 🔧 symbol!!!
-- You can find out more in the Wiki page.
+- I tested two controllers with 🔧 as the upper left button, one had a red remote control and the other a black one, both work.
+- There is also a version of the controller with the symbol ☀️/⚙️. Versions with the same display as the 🔧 version should work right away.
+- The ☀️/⚙️ version with an older display type without a menu and with the option to adjust the power levels from H1 to H6 does not work with this project.
+- You can find out more in the Wiki tab.
 
 ![edited](https://github.com/user-attachments/assets/3b78064b-d00a-4f14-a39b-06667b446803)
+<img width="394" height="319" alt="image" src="https://github.com/user-attachments/assets/bb660e72-1fe7-475d-ac64-e7bef8101d1f" />
 
 
 ### ✨ Features
@@ -251,11 +251,13 @@ Używasz na własne ryzyko !!!!
 ### 🔧 Kompatybilność:
 
 - Przetestowałem dwa kontrolery zawierające 🔧 jako górny lewy przycisk, jeden miał pilot czerwony drugi czarny oba działają.
-- Jest jeszcze wersja sterownika z symbolem ☀️ jest możliwe dodanie wsparcia jak tylko uda mi się taki kupić i zmapować ramki danych  z radia,
-- Natomiast aktualnie wspieram tylko wersje z symbolem 🔧!!!
+- Jest jeszcze wersja sterownika z symbolem ☀️/⚙️ wersje posiadające ten sam wyświetlacz co wersja 🔧 powinny działać od razu.
+- Wersja ☀️/⚙️ posiadająca wyświetlacz starszego typu bez menu i z opcją regulacji stopni mocy od H1 do H6 nie działa z tym projektem.
 - Możesz dowiedzieć się więcej w zakładce Wiki
 
 ![edited](https://github.com/user-attachments/assets/b8a33a3f-0c65-4451-8a56-ab2ca61467db)
+<img width="394" height="319" alt="image" src="https://github.com/user-attachments/assets/bb660e72-1fe7-475d-ac64-e7bef8101d1f" />
+
 
 ### ✨ Funkcje
 
