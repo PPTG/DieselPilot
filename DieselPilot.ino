@@ -76,8 +76,8 @@
 #define STATE_COOLING        8
 
 // Error Codes (BYTE[7])
-#define ERR_NONE           0x00  // ✅ NO ERROR
-#define ERR_ON             0x01  // ⚡ ON - Starting
+#define ERR_NONE           0x00  // ✅ Normal OFF
+#define ERR_ON             0x01  // ✅ Normal ON
 #define ERR_UNDERVOLTAGE   0x02  // 🔋 UNDERVOLTAGE
 #define ERR_OVERVOLTAGE    0x03  // ⚡ OVERVOLTAGE
 #define ERR_SPARK_PLUG     0x04  // 🔌 SPARK PLUG ERROR
