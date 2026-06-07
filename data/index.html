@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diesel Pilot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 { 
+            color: #ff6b00; 
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(255, 107, 0, 0.3);
+        }
+
+        /* Cloud status pill in header */
+        .cloud-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid;
+            transition: all 0.3s;
+        }
+        .cloud-pill.disabled  { background: rgba(80,80,80,0.2); border-color: #444; color: #666; }
+        .cloud-pill.waiting   { background: rgba(255,193,7,0.1); border-color: rgba(255,193,7,0.4); color: #ffc107; }
+        .cloud-pill.connected { background: rgba(76,175,80,0.1); border-color: rgba(76,175,80,0.4); color: #4caf50; }
+        .cloud-pill.error     { background: rgba(244,67,54,0.1); border-color: rgba(244,67,54,0.4); color: #f44336; }
+        
+        .settings-btn {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.3s;
+            filter: drop-shadow(0 0 0 transparent);
+        }
+        .settings-btn:hover { filter: drop-shadow(0 0 10px rgba(255, 107, 0, 0.5)); }
+        .settings-btn.active { filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.8)); }
+        .settings-btn:hover .gear-icon { transform: rotate(90deg); }
+        .settings-btn.active .gear-icon { transform: rotate(180deg); }
+        .gear-icon { transition: transform 0.3s; }
+        
+        .glass-card {
+            background: rgba(26, 26, 26, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .glass-card h2 {
+            color: #ff6b00;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 6px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .tab:hover { background: rgba(255, 107, 0, 0.1); }
+        .tab.active { background: rgba(255, 107, 0, 0.2); border: 1px solid rgba(255, 107, 0, 0.3); color: #ff6b00; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            background: rgba(40, 40, 40, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s;
+        }
+        .status-item:hover { border-color: rgba(255, 107, 0, 0.3); transform: translateY(-2px); }
+        .status-label { font-size: 0.85rem; color: #888; margin-bottom: 6px; }
+        .status-value { font-size: 1.5rem; font-weight: 600; color: #ff6b00; }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.2), rgba(255, 107, 0, 0.1));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            color: #ff6b00;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.3), rgba(255, 107, 0, 0.2));
+            border-color: rgba(255, 107, 0, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 0, 0.2);
+        }
+        button:active { transform: translateY(0); }
+        button.danger {
+            background: linear-gradient(135deg, rgba(211, 47, 47, 0.2), rgba(211, 47, 47, 0.1));
+            border-color: rgba(211, 47, 47, 0.3);
+            color: #d32f2f;
+        }
+        button.danger:hover { background: linear-gradient(135deg, rgba(211,47,47,0.3), rgba(211,47,47,0.2)); }
+        
+        input, select {
+            width: 100%;
+            background: rgba(40, 40, 40, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: rgba(255, 107, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+        input::placeholder { color: #666; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-section { margin-bottom: 24px; }
+        
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(40, 40, 40, 0.4);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .switch { position: relative; width: 50px; height: 28px; }
+        .switch input { display: none; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(80, 80, 80, 0.6);
+            border-radius: 28px;
+            transition: 0.3s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px; width: 22px;
+            left: 3px; bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        input:checked + .slider { background: linear-gradient(135deg, #ff6b00, #ff8533); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .info {
+            background: rgba(255, 107, 0, 0.05);
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 12px;
+        }
+        .info strong { color: #ff6b00; }
+
+        /* ── CLOUD SPECIFIC STYLES ── */
+        .cloud-box {
+            background: rgba(30, 30, 50, 0.6);
+            border: 1px solid rgba(100, 120, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .cloud-device-id {
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #7b9fff;
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 12px;
+            background: rgba(100, 120, 255, 0.05);
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        .cloud-claim-code {
+            font-family: 'Courier New', monospace;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ff6b00;
+            letter-spacing: 6px;
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 107, 0, 0.05);
+            border: 1px dashed rgba(255, 107, 0, 0.3);
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        .cloud-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .cloud-step:last-child { border-bottom: none; }
+        .cloud-step-num {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            background: rgba(255, 107, 0, 0.15);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            color: #ff6b00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .cloud-step-text { color: #ccc; font-size: 0.9rem; line-height: 1.5; }
+        .cloud-step-text strong { color: #e0e0e0; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-ok      { background: rgba(76,175,80,0.15); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+        .badge-warn    { background: rgba(255,193,7,0.15); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
+        .badge-off     { background: rgba(80,80,80,0.2); color: #666; border: 1px solid #333; }
+        .badge-error   { background: rgba(244,67,54,0.15); color: #f44336; border: 1px solid rgba(244,67,54,0.3); }
+
+        /* Settings overlay */
+        .settings-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .settings-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+        
+        .settings-panel {
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .settings-title { font-size: 1.8rem; font-weight: 600; color: #ff6b00; }
+        
+        .close-btn {
+            width: 40px; height: 40px;
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #ff6b00;
+            transition: all 0.3s;
+        }
+        .close-btn:hover { background: rgba(255, 107, 0, 0.2); transform: scale(1.1); }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.3rem; }
+            .settings-btn { font-size: 1.5rem; }
+            .glass-card { padding: 16px; }
+            .glass-card h2 { font-size: 1.1rem; }
+            .status-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .status-value { font-size: 1.2rem; }
+            .controls { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            button { padding: 12px; font-size: 0.9rem; }
+            .tabs { gap: 3px; padding: 4px; }
+            .tab { padding: 8px 4px; font-size: 0.75rem; }
+            .settings-panel { margin-top: 20px; padding: 20px; }
+            .settings-title { font-size: 1.3rem; }
+            .cloud-device-id { font-size: 1.3rem; }
+            .cloud-claim-code { font-size: 1.6rem; letter-spacing: 3px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <h1>🔥 Diesel Pilot</h1>
+            <span class="cloud-pill disabled" id="cloudHeaderPill">⬆ OFF</span>
+        </div>
+        <div class="settings-btn" id="settingsBtn" onclick="toggleSettings()">
+            <span class="gear-icon">⚙️</span>
+        </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="glass-card">
+        <h2>📊 Status</h2>
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="status-label">State</div>
+                <div class="status-value" id="state">--</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Voltage</div>
+                <div class="status-value"><span id="voltage">--</span>V</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Ambient</div>
+                <div class="status-value"><span id="ambient">--</span>°C</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Case Temp</div>
+                <div class="status-value"><span id="caseTemp">--</span>°C</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Setpoint</div>
+                <div class="status-value"><span id="setpoint">--</span>°C</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Pump</div>
+                <div class="status-value"><span id="pump">--</span>Hz</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Mode</div>
+                <div class="status-value" id="mode">--</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Error</div>
+                <div class="status-value" id="error">--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="glass-card">
+        <h2>🎮 Control</h2>
+        <div class="controls">
+            <button onclick="sendCmd('power')">⚡ POWER</button>
+            <button onclick="sendCmd('up')">▲ UP</button>
+            <button onclick="sendCmd('down')">▼ DOWN</button>
+            <button onclick="sendCmd('mode')">🔄 MODE</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-panel">
+        <div class="settings-header">
+            <div class="settings-title">⚙️ Settings</div>
+            <div class="close-btn" onclick="toggleSettings()">✕</div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('pairing',this)">🔗 Pairing</div>
+            <div class="tab" onclick="switchTab('wifi',this)">📡 WiFi</div>
+            <div class="tab" onclick="switchTab('mqtt',this)">📨 MQTT</div>
+            <div class="tab" onclick="switchTab('ota',this)">⬆ OTA</div>
+            <div class="tab" onclick="switchTab('system',this)">⚙️ System</div>
+        </div>
+
+        <!-- PAIRING TAB -->
+        <div id="pairing" class="tab-content active">
+            <div class="glass-card">
+                <h2>🔗 Pairing</h2>
+                <select id="version">
+                    <option value="V2">Protocol V2 (433.937 MHz)</option>
+                    <option value="V1">Protocol V1 (433.892 MHz)</option>
+                </select>
+                <input type="number" id="customFreq" placeholder="Custom Frequency (Hz) — optional">
+                <button onclick="autoPair()">🔍 AUTO PAIR</button>
+                <input type="text" id="manualAddr" placeholder="Manual Address (0xCA00445B)" style="margin-top:12px;">
+                <button onclick="manualPair()">✏️ MANUAL PAIR</button>
+                <div class="info"><strong>Current:</strong> <span id="currentAddr">Not paired</span></div>
+            </div>
+        </div>
+
+        <!-- WIFI TAB -->
+        <div id="wifi" class="tab-content">
+            <div class="glass-card">
+                <h2>📡 WiFi Configuration</h2>
+                <input type="text" id="deviceName" placeholder="Hostname (e.g. DieselPilot)">
+                <input type="text" id="wifiSSID" placeholder="WiFi SSID">
+                <input type="password" id="wifiPass" placeholder="WiFi Password">
+                <button onclick="saveWiFi()">💾 SAVE &amp; REBOOT</button>
+            </div>
+        </div>
+
+        <!-- MQTT TAB -->
+        <div id="mqtt" class="tab-content">
+            <div class="glass-card">
+                <h2>📨 MQTT Configuration</h2>
+                <input type="text" id="mqttServer" placeholder="MQTT Broker IP">
+                <div class="form-row">
+                    <input type="number" id="mqttPort" placeholder="Port" value="1883">
+                    <input type="text" id="mqttTopic" placeholder="Topic">
+                </div>
+                <div class="toggle-row">
+                    <span>Authentication</span>
+                    <label class="switch">
+                        <input type="checkbox" id="mqttAuth" onchange="toggleMQTT()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="mqttAuthFields" style="display:none;">
+                    <input type="text" id="mqttUser" placeholder="Username">
+                    <input type="password" id="mqttPass" placeholder="Password">
+                </div>
+                <button onclick="saveMQTT()">💾 SAVE MQTT</button>
+            </div>
+        </div>
+
+        <!-- ⬆ OTA TAB -->
+        <div id="ota" class="tab-content">
+            <div class="glass-card">
+                <h2>⬆ OTA Updates</h2>
+
+                <!-- Master toggle -->
+                <div class="toggle-row">
+                    <span style="font-weight:600;">Enable OTA Updates</span>
+                    <label class="switch">
+                        <input type="checkbox" id="otaToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <input type="password" id="otaPass" placeholder="OTA Password (leave blank = no password)" autocomplete="new-password">
+                <button onclick="saveOTA()">💾 SAVE &amp; REBOOT</button>
+
+                <!-- Shown when OTA is ON -->
+                <div id="otaOnSection" style="display:none; margin-top:16px;">
+                    <div class="cloud-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div>
+                                <div style="color:#888; font-size:0.8rem;">Network address</div>
+                                <div style="font-family:monospace; font-size:1.1rem; color:#7b9fff;" id="otaTarget">--</div>
+                            </div>
+                            <div id="otaStatusBadge" class="status-badge badge-ok">ON</div>
+                        </div>
+                        <div style="color:#888; font-size:0.85rem;">
+                            Upload firmware over WiFi using <strong>PlatformIO (espota)</strong> or the
+                            Arduino IDE network port. Use the same hostname/IP and OTA password.
+                        </div>
+                    </div>
+                    <div class="info" style="font-family:monospace; font-size:0.8rem;">
+                        pio run -t upload --upload-port &lt;ip&gt;
+                    </div>
+                </div>
+
+                <!-- Shown when OTA is OFF -->
+                <div id="otaOffSection">
+                    <div class="info">
+                        Enable OTA to flash new firmware over WiFi (no USB cable needed).
+                        Set a password to protect uploads.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SYSTEM TAB -->
+        <div id="system" class="tab-content">
+            <div class="glass-card">
+                <h2>ℹ️ System Info</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Version</div>
+                        <div class="status-value" style="font-size:1rem;" id="fwVersion">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">IP Address</div>
+                        <div class="status-value" style="font-size:1rem;" id="ipAddr">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">WiFi Mode</div>
+                        <div class="status-value" style="font-size:1rem;" id="wifiMode">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">MQTT</div>
+                        <div class="status-value" style="font-size:1rem;" id="mqttStatus">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">OTA</div>
+                        <div class="status-value" style="font-size:1rem;" id="otaInfoStatus">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Uptime</div>
+                        <div class="status-value" style="font-size:1rem;" id="uptime">--</div>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:12px;">
+                    <button onclick="rebootDevice()">🔄 REBOOT</button>
+                    <button class="danger" onclick="factoryReset()">⚠️ FACTORY RESET</button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- END SETTINGS PANEL -->
+</div><!-- END SETTINGS OVERLAY -->
+
+<script>
+    // ── SETTINGS OVERLAY ──────────────────────────────────────────
+    function toggleSettings() {
+        const overlay = document.getElementById('settingsOverlay');
+        const btn     = document.getElementById('settingsBtn');
+        overlay.classList.toggle('active');
+        btn.classList.toggle('active');
+        if(overlay.classList.contains('active')) updateOtaUI();
+    }
+
+    document.getElementById('settingsOverlay').addEventListener('click', function(e) {
+        if(e.target === this) toggleSettings();
+    });
+
+    function switchTab(tab, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        if(el) el.classList.add('active');
+        document.getElementById(tab).classList.add('active');
+        if(tab === 'ota') updateOtaUI();
+    }
+
+    // ── FORM HELPERS ──────────────────────────────────────────────
+    function toggleMQTT() {
+        document.getElementById('mqttAuthFields').style.display =
+            document.getElementById('mqttAuth').checked ? 'block' : 'none';
+    }
+
+    // ── HEATER COMMANDS ───────────────────────────────────────────
+    function sendCmd(cmd) {
+        fetch(`/api/cmd?c=${cmd}`).then(r => r.text()).then(() => updateStatus());
+    }
+
+    // ── PAIRING ───────────────────────────────────────────────────
+    function autoPair() {
+        const version = document.getElementById('version').value;
+        const freq    = document.getElementById('customFreq').value;
+        fetch(`/api/pair/auto?version=${version}&customFreq=${freq}`)
+            .then(r => r.text()).then(msg => alert(msg));
+    }
+
+    function manualPair() {
+        const addr    = document.getElementById('manualAddr').value;
+        const version = document.getElementById('version').value;
+        const freq    = document.getElementById('customFreq').value;
+        fetch(`/api/pair/manual?addr=${addr}&version=${version}&customFreq=${freq}`)
+            .then(r => r.text()).then(msg => alert(msg));
+    }
+
+    // ── WIFI / MQTT / OTA ─────────────────────────────────────────
+    function saveWiFi() {
+        const name = document.getElementById('deviceName').value;
+        const ssid = document.getElementById('wifiSSID').value;
+        const pass = document.getElementById('wifiPass').value;
+        fetch(`/api/wifi?deviceName=${encodeURIComponent(name)}&ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}`)
+            .then(r => r.text()).then(msg => alert(msg));
+    }
+
+    function saveMQTT() {
+        const srv   = document.getElementById('mqttServer').value;
+        const port  = document.getElementById('mqttPort').value;
+        const topic = document.getElementById('mqttTopic').value;
+        const auth  = document.getElementById('mqttAuth').checked ? '1' : '0';
+        const user  = document.getElementById('mqttUser').value;
+        const pass  = document.getElementById('mqttPass').value;
+        fetch(`/api/mqtt?server=${encodeURIComponent(srv)}&port=${port}&topic=${encodeURIComponent(topic)}&authEnabled=${auth}&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`)
+            .then(r => r.text()).then(msg => alert(msg));
+    }
+
+    function rebootDevice() {
+        if(confirm('Reboot device?'))
+            fetch('/api/reboot').then(r => r.text()).then(msg => alert(msg));
+    }
+
+    function factoryReset() {
+        if(confirm('⚠️ FACTORY RESET — Erase ALL settings?'))
+            fetch('/api/factory').then(r => r.text()).then(msg => alert(msg));
+    }
+
+    // ── OTA ───────────────────────────────────────────────────────
+    function saveOTA() {
+        const enabled = document.getElementById('otaToggle').checked ? '1' : '0';
+        const pass    = document.getElementById('otaPass').value;
+        fetch(`/api/ota/config?enabled=${enabled}&password=${encodeURIComponent(pass)}`)
+            .then(r => r.text()).then(msg => alert(msg));
+    }
+
+    // Header pill — driven by the background status poll, never touches the toggle.
+    function setOtaPill(enabled) {
+        const pill = document.getElementById('cloudHeaderPill');
+        pill.textContent = enabled ? '⬆ OTA' : '⬆ OFF';
+        pill.className   = enabled ? 'cloud-pill connected' : 'cloud-pill disabled';
+    }
+
+    // Full sync of the OTA form — called only when the settings panel / tab opens,
+    // so the periodic poll can't revert the user's pending toggle choice.
+    function updateOtaUI() {
+        fetch('/api/ota/status')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('otaToggle').checked = data.enabled;
+
+                const target = (data.hostname || 'dieselpilot') + '  (' + (data.ip || '--') + ')';
+                document.getElementById('otaTarget').textContent = target;
+
+                document.getElementById('otaOffSection').style.display = data.enabled ? 'none' : 'block';
+                document.getElementById('otaOnSection').style.display  = data.enabled ? 'block' : 'none';
+
+                const badge = document.getElementById('otaStatusBadge');
+                badge.textContent = data.hasPassword ? '● ON · secured' : '● ON';
+                badge.className   = 'status-badge badge-ok';
+
+                setOtaPill(data.enabled);
+            })
+            .catch(() => {
+                document.getElementById('cloudHeaderPill').textContent = '⬆ ?';
+                document.getElementById('cloudHeaderPill').className   = 'cloud-pill error';
+            });
+    }
+
+    // ── MAIN STATUS POLL ──────────────────────────────────────────
+    function updateStatus() {
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('state').textContent    = data.state;
+                document.getElementById('voltage').textContent  = data.voltage;
+                document.getElementById('ambient').textContent  = data.ambient;
+                document.getElementById('caseTemp').textContent = data.case;
+                document.getElementById('setpoint').textContent = data.setpoint;
+                document.getElementById('pump').textContent     = data.pump;
+                document.getElementById('mode').textContent     = data.mode;
+                document.getElementById('error').textContent    = data.errorName;
+                document.getElementById('currentAddr').textContent = data.addr;
+            });
+
+        fetch('/api/info')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('ipAddr').textContent        = data.ip;
+                document.getElementById('wifiMode').textContent      = data.wifiMode;
+                document.getElementById('mqttStatus').textContent    = data.mqtt;
+                document.getElementById('otaInfoStatus').textContent  = data.ota;
+                document.getElementById('uptime').textContent        = data.uptime;
+                document.getElementById('fwVersion').textContent     = data.version;
+                // Keep the header pill live, but DON'T touch the OTA toggle here.
+                setOtaPill(data.ota === 'Enabled');
+            });
+    }
+
+    // Initial load + polling
+    updateStatus();
+    setInterval(updateStatus, 3000);
+</script>
+</body>
+</html>
