@@ -21,7 +21,7 @@
  * - SH1106 OLED (I2C)
  *
  * ═══════════════════════════════════════════════════════════════════════════
- *                  Version: V1.5 - FREE
+ *                  Version: V1.3 - FREE
  * ═══════════════════════════════════════════════════════════════════════════
  * This is the open-source edition (no cloud). Remote access is provided via
  * local Web GUI, MQTT and on-network OTA updates.
@@ -112,7 +112,7 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 // GLOBAL VARIABLES
 // ═══════════════════════════════════════════════════════════════════════════
 
-String version = "1.5";
+String version = "1.3";
 
 // WiFi
 String apSSID = "Diesel-Pilot";
