@@ -27,7 +27,7 @@ Use at your own risk!!!!
 
 - I tested two controllers with 🔧 as the upper left button, one had a red remote control and the other a black one, both work.
 - There is also a version of the controller with the symbol ☀️/⚙️. Versions with the same display as the 🔧 version should work right away.
-- The ☀️/⚙️ version with an older display type without a menu and with the option to adjust the power levels from H1 to H6 does not work with this project.
+- The ☀️/⚙️ version with an older display type without a menu and with the option to adjust the power levels from H1 to H6 does work(as of version 1.3) with this project.
 - You can find out more in the Wiki tab.
 
 | Version 1.0 | Version 1.5 | Version 2.0 |
@@ -317,14 +317,14 @@ Używasz na własne ryzyko !!!!
 
 ### 🔧 Kompatybilność:
 
-- Przetestowałem dwa kontrolery zawierające 🔧 jako górny lewy przycisk, jeden miał pilot czerwony drugi czarny oba działają.
+- Przetestowałem 2 kontrolery zawierające 🔧 jako górny lewy przycisk, jeden miał pilot czerwony drugi czarny oba działają.
 - Jest jeszcze wersja sterownika z symbolem ☀️/⚙️ wersje posiadające ten sam wyświetlacz co wersja 🔧 powinny działać od razu.
-- Wersja ☀️/⚙️ posiadająca wyświetlacz starszego typu bez menu i z opcją regulacji stopni mocy od H1 do H6 nie działa z tym projektem.
+- Wersja ☀️/⚙️ posiadająca wyświetlacz starszego typu bez menu i z opcją regulacji stopni mocy od H1 do H6 działa(od wersji 1.3) z tym projektem.
 - Możesz dowiedzieć się więcej w zakładce Wiki
 
 | Wersja 1.0 | Wersja 1.5 | Wersja 2.0 |
 |-----------|-------------|-------------|
-| <img src="https://github.com/user-attachments/assets/c7ae01d0-016e-47ff-843e-1f3d6831b990" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
+| <img src="https://github.com/user-attachments/assets/b8a03480-bc09-4f54-aad0-e6de703ac34e" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
 
 ![edited](https://github.com/user-attachments/assets/b8a33a3f-0c65-4451-8a56-ab2ca61467db)
 
