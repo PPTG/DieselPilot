@@ -32,10 +32,9 @@ Use at your own risk!!!!
 
 | Version 1.0 | Version 1.5 | Version 2.0 |
 |-----------|-------------|-------------|
-| <img src="https://github.com/user-attachments/assets/c7ae01d0-016e-47ff-843e-1f3d6831b990" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
+| <img src="https://github.com/user-attachments/assets/b8a03480-bc09-4f54-aad0-e6de703ac34e" width="200" /> | <img src="https://github.com/user-attachments/assets/c592318d-d72a-4915-9d4b-620a8a11268a" width="200" />  | <img src="https://github.com/user-attachments/assets/5ea85b0c-e52e-4975-95cd-75102e8717f1" width="200" /> |
 
 ![edited](https://github.com/user-attachments/assets/3b78064b-d00a-4f14-a39b-06667b446803)
-
 
 
 ### ✨ Features
